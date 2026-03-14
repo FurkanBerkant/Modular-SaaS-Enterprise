@@ -16,4 +16,5 @@ spring:
       enabled: true
   data:
     mongodb:
+      uuid-representation: standard
       uri: ${MONGODB_URI}

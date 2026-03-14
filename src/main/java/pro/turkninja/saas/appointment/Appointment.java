@@ -4,6 +4,8 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Document(collection = "appointments")
 @Data
 public class Appointment {
@@ -22,5 +24,11 @@ public class Appointment {
         }
         this.status = AppointmentStatus.APPROVED;
     }
-
+    public record TimeSlot(LocalDateTime startTime, LocalDateTime endTime) {
+        public TimeSlot {
+            if (endTime.isBefore(startTime)) {
+                throw new IllegalArgumentException("Bitiş zamanı, başlangıçtan önce olamaz!");
+            }
+        }
+    }
 }

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sağlayıcı Kaydı - Adım 1</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script>
+        // Mapper: data-* attributes -> Alpine attributes. Runs on DOMContentLoaded before Alpine (Alpine deferred).
+        document.addEventListener('DOMContentLoaded', function () {
+            const map = {
+                'data-x-data': 'x-data',
+                'data-x-show': 'x-show',
+                'data-x-transition': 'x-transition',
+                'data-x-model': 'x-model',
+                'data-x-text': 'x-text',
+                'data-bind-class': ':class',
+                'data-bind-disabled': ':disabled',
+                'data-on-click': '@click'
+            };
+            Object.keys(map).forEach(function (src) {
+                document.querySelectorAll('[' + src + ']').forEach(function (el) {
+                    const val = el.getAttribute(src);
+                    el.setAttribute(map[src], val);
+                    el.removeAttribute(src);
+                });
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
+</head>
+
+<body class="bg-gray-100">
+    <div data-x-data="{ step: 1, businessName: '', category: '' }" class="max-w-2xl mx-auto mt-10 p-6 bg-base-100 rounded-lg shadow-2xl">
+        <ul class="steps w-full mb-8">
+            <li class="step" data-bind-class="step >= 1 ? 'step-primary' : ''">Temel Bilgiler</li>
+            <li class="step" data-bind-class="step >= 2 ? 'step-primary' : ''">İletişim & Adres</li>
+            <li class="step" data-bind-class="step >= 3 ? 'step-primary' : ''">Tamamla</li>
+        </ul>
+
+        <form action="/provider/onboarding" method="POST">
+            <div data-x-show="step === 1" data-x-transition>
+                <h3 class="text-xl font-bold mb-4">İşletmenizi Tanıtın</h3>
+
+                <div class="form-control mb-4">
+                    <label class="label" for="businessName">İşletme Adı</label>
+                    <input id="businessName" type="text" name="businessName" data-x-model="businessName" class="input input-bordered"
+                        placeholder="Örn: Turkninja Yaşam Koçluğu" required />
+                </div>
+
+                <div class="form-control mb-4">
+                    <label class="label" for="category">Kategoriniz</label>
+                    <select id="category" name="category" data-x-model="category" class="select select-bordered" required>
+                        <option value="" disabled selected>Kategori Seçin</option>
+                        <option value="PSIKOLOG">Psikolog</option>
+                        <option value="SPOR_HOCASI">Spor Eğitmeni</option>
+                        <option value="KUAFOR">Kuaför / Güzellik</option>
+                    </select>
+                </div>
+
+                <button type="button" class="btn btn-primary float-right" data-on-click="step = 2"
+                    data-bind-disabled="!businessName || !category">İleri</button>
+            </div>
+
+            <div data-x-show="step === 2" data-x-transition style="display: none;">
+                <h3 class="text-xl font-bold mb-4">Neredesiniz?</h3>
+
+                <div class="form-control mb-4">
+                    <label class="label" for="city">Şehir</label>
+                    <input id="city" type="text" name="city" class="input input-bordered" placeholder="Örn: İstanbul" />
+                </div>
+
+                <div class="form-control mb-4">
+                    <label class="label" for="fullAddress">Açık Adres</label>
+                    <textarea id="fullAddress" name="fullAddress" class="textarea textarea-bordered h-24"
+                        placeholder="Tam adresinizi girin..."></textarea>
+                </div>
+
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-ghost" data-on-click="step = 1">Geri</button>
+                    <button type="button" class="btn btn-primary" data-on-click="step = 3">İleri</button>
+                </div>
+            </div>
+
+            <div data-x-show="step === 3" data-x-transition style="display: none;">
+                <h3 class="text-xl font-bold mb-4">Harika! Son Kontrol</h3>
+                <p class="mb-6">Sisteme <strong><span data-x-text="businessName"></span></strong> adıyla, <strong><span
+                            data-x-text="category"></span></strong> kategorisinde kayıt oluyorsunuz.</p>
+
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-ghost" data-on-click="step = 2">Geri</button>
+                    <button type="submit" class="btn btn-success">Dükkanı Aç!</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+
+</html>
