@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" xmlns:layout="http://www.w3.org/1999/xhtml">
 
 <head>
     <meta charset="UTF-8">
@@ -32,68 +32,70 @@
 </head>
 
 <body class="bg-gray-100">
-    <div data-x-data="{ step: 1, businessName: '', category: '' }" class="max-w-2xl mx-auto mt-10 p-6 bg-base-100 rounded-lg shadow-2xl">
-        <ul class="steps w-full mb-8">
-            <li class="step" data-bind-class="step >= 1 ? 'step-primary' : ''">Temel Bilgiler</li>
-            <li class="step" data-bind-class="step >= 2 ? 'step-primary' : ''">İletişim & Adres</li>
-            <li class="step" data-bind-class="step >= 3 ? 'step-primary' : ''">Tamamla</li>
-        </ul>
+    <div layout:fragment="content">
+        <div data-x-data="{ step: 1, businessName: '', category: '' }" class="max-w-2xl mx-auto mt-10 p-6 bg-base-100 rounded-lg shadow-2xl">
+            <ul class="steps w-full mb-8">
+                <li class="step" data-bind-class="step >= 1 ? 'step-primary' : ''">Temel Bilgiler</li>
+                <li class="step" data-bind-class="step >= 2 ? 'step-primary' : ''">&#304;leti&#351;im & Adres</li>
+                <li class="step" data-bind-class="step >= 3 ? 'step-primary' : ''">Tamamla</li>
+            </ul>
 
-        <form action="/provider/onboarding" method="POST">
-            <div data-x-show="step === 1" data-x-transition>
-                <h3 class="text-xl font-bold mb-4">İşletmenizi Tanıtın</h3>
+            <form action="/provider/onboarding" method="POST">
+                <div data-x-show="step === 1" data-x-transition>
+                    <h3 class="text-xl font-bold mb-4">&#304;&#351;letmenizi Tanıtın</h3>
 
-                <div class="form-control mb-4">
-                    <label class="label" for="businessName">İşletme Adı</label>
-                    <input id="businessName" type="text" name="businessName" data-x-model="businessName" class="input input-bordered"
-                        placeholder="Örn: Turkninja Yaşam Koçluğu" required />
+                    <div class="form-control mb-4">
+                        <label class="label" for="businessName">&#304;&#351;letme Adı</label>
+                        <input id="businessName" type="text" name="businessName" data-x-model="businessName" class="input input-bordered"
+                            placeholder="&#214;rn: Turkninja Ya&#351;am Ko&#231;lu&#287;u" required />
+                    </div>
+
+                    <div class="form-control mb-4">
+                        <label class="label" for="category">Kategoriniz</label>
+                        <select id="category" name="category" data-x-model="category" class="select select-bordered" required>
+                            <option value="" disabled selected>Kategori Se&#231;in</option>
+                            <option value="PSIKOLOG">Psikolog</option>
+                            <option value="SPOR_HOCASI">Spor E&#287;itmeni</option>
+                            <option value="KUAFOR">Kuaf&#246;r / G&#252;zellik</option>
+                        </select>
+                    </div>
+
+                    <button type="button" class="btn btn-primary float-right" data-on-click="step = 2"
+                        data-bind-disabled="!businessName || !category">&#304;leri</button>
                 </div>
 
-                <div class="form-control mb-4">
-                    <label class="label" for="category">Kategoriniz</label>
-                    <select id="category" name="category" data-x-model="category" class="select select-bordered" required>
-                        <option value="" disabled selected>Kategori Seçin</option>
-                        <option value="PSIKOLOG">Psikolog</option>
-                        <option value="SPOR_HOCASI">Spor Eğitmeni</option>
-                        <option value="KUAFOR">Kuaför / Güzellik</option>
-                    </select>
+                <div data-x-show="step === 2" data-x-transition style="display: none;">
+                    <h3 class="text-xl font-bold mb-4">Neredesiniz?</h3>
+
+                    <div class="form-control mb-4">
+                        <label class="label" for="city">&#350;ehir</label>
+                        <input id="city" type="text" name="city" class="input input-bordered" placeholder="&#214;rn: &#304;stanbul" />
+                    </div>
+
+                    <div class="form-control mb-4">
+                        <label class="label" for="fullAddress">A&#231;&#305;k Adres</label>
+                        <textarea id="fullAddress" name="fullAddress" class="textarea textarea-bordered h-24"
+                            placeholder="Tam adresinizi girin..."></textarea>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <button type="button" class="btn btn-ghost" data-on-click="step = 1">Geri</button>
+                        <button type="button" class="btn btn-primary" data-on-click="step = 3">&#304;leri</button>
+                    </div>
                 </div>
 
-                <button type="button" class="btn btn-primary float-right" data-on-click="step = 2"
-                    data-bind-disabled="!businessName || !category">İleri</button>
-            </div>
+                <div data-x-show="step === 3" data-x-transition style="display: none;">
+                    <h3 class="text-xl font-bold mb-4">Harika! Son Kontrol</h3>
+                    <p class="mb-6">Sisteme <strong><span data-x-text="businessName"></span></strong> adıyla, <strong><span
+                                data-x-text="category"></span></strong> kategorisinde kayıt oluyorsunuz.</p>
 
-            <div data-x-show="step === 2" data-x-transition style="display: none;">
-                <h3 class="text-xl font-bold mb-4">Neredesiniz?</h3>
-
-                <div class="form-control mb-4">
-                    <label class="label" for="city">Şehir</label>
-                    <input id="city" type="text" name="city" class="input input-bordered" placeholder="Örn: İstanbul" />
+                    <div class="flex justify-between">
+                        <button type="button" class="btn btn-ghost" data-on-click="step = 2">Geri</button>
+                        <button type="submit" class="btn btn-success">D&#252;kkanı A&#231;!</button>
+                    </div>
                 </div>
-
-                <div class="form-control mb-4">
-                    <label class="label" for="fullAddress">Açık Adres</label>
-                    <textarea id="fullAddress" name="fullAddress" class="textarea textarea-bordered h-24"
-                        placeholder="Tam adresinizi girin..."></textarea>
-                </div>
-
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-ghost" data-on-click="step = 1">Geri</button>
-                    <button type="button" class="btn btn-primary" data-on-click="step = 3">İleri</button>
-                </div>
-            </div>
-
-            <div data-x-show="step === 3" data-x-transition style="display: none;">
-                <h3 class="text-xl font-bold mb-4">Harika! Son Kontrol</h3>
-                <p class="mb-6">Sisteme <strong><span data-x-text="businessName"></span></strong> adıyla, <strong><span
-                            data-x-text="category"></span></strong> kategorisinde kayıt oluyorsunuz.</p>
-
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-ghost" data-on-click="step = 2">Geri</button>
-                    <button type="submit" class="btn btn-success">Dükkanı Aç!</button>
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </body>
 
