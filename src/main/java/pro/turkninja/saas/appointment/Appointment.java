@@ -2,6 +2,7 @@ package pro.turkninja.saas.appointment;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "appointments")
@@ -13,13 +14,24 @@ public class Appointment {
     private String providerId;
     private String customerId;
     private TimeSlot timeSlot;
+    private String date;
+    private String time;
 
-    private AppointmentStatus status;
+    private AppointmentStatus status = AppointmentStatus.PENDING;
+    @Version
+    private Long version;
 
     public void approve() {
-        if (this.status == AppointmentStatus.CANCELLED) {
-            throw new IllegalStateException("İptal edilmiş bir randevu onaylanamaz!");
+        if (this.status != AppointmentStatus.PENDING) {
+            throw new IllegalStateException("Sadece BEKLEYEN randevular onaylanabilir! Şu anki durum: " + this.status);
         }
         this.status = AppointmentStatus.APPROVED;
+    }
+
+    public void reject() {
+        if (this.status != AppointmentStatus.PENDING) {
+            throw new IllegalStateException("Sadece BEKLEYEN randevular reddedilebilir! Şu anki durum: " + this.status);
+        }
+        this.status = AppointmentStatus.REJECTED;
     }
 }

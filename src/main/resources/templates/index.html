@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="tr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <meta charset="UTF-8">
+    <title>Randevio — Randevu & ERP Platformu</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <style>
+        .hero-glow {
+            position: absolute;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(0,229,160,0.12) 0%, transparent 70%);
+            top: -100px; left: 50%; transform: translateX(-50%);
+            pointer-events: none;
+        }
+        .hero-grid {
+            background-image:
+                    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+        .badge-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(0,229,160,0.1);
+            border: 1px solid rgba(0,229,160,0.25);
+            color: #00E5A0;
+            font-size: 0.75rem; font-weight: 600;
+            padding: 4px 12px; border-radius: 100px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .hero-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: clamp(2.8rem, 7vw, 5.5rem);
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            color: white;
+        }
+        .hero-title .accent { color: #00E5A0; }
+        .hero-sub {
+            font-size: 1.15rem;
+            color: rgba(255,255,255,0.5);
+            max-width: 520px;
+            line-height: 1.7;
+            font-weight: 400;
+        }
+        .btn-cta-primary {
+            background: #00E5A0;
+            color: #0a0a0a;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 14px 32px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 8px;
+            text-decoration: none;
+        }
+        .btn-cta-primary:hover {
+            background: #00ffb3;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(0,229,160,0.35);
+        }
+        .btn-cta-secondary {
+            background: transparent;
+            color: rgba(255,255,255,0.75);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 14px 28px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-cta-secondary:hover {
+            background: rgba(255,255,255,0.06);
+            color: white;
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        /* Stats */
+        .stat-block { text-align: center; }
+        .stat-num {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1;
+        }
+        .stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-top: 4px; }
+
+        /* Feature cards */
+        .feature-card {
+            background: rgba(22, 27, 39, 0.8);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0,229,160,0.04) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .feature-card:hover { border-color: rgba(0,229,160,0.2); transform: translateY(-3px); }
+        .feature-card:hover::before { opacity: 1; }
+        .feature-icon {
+            width: 44px; height: 44px;
+            background: rgba(0,229,160,0.1);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 16px;
+            color: #00E5A0;
+        }
+        .feature-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: white;
+            margin-bottom: 8px;
+        }
+        .feature-desc { font-size: 0.875rem; color: rgba(255,255,255,0.45); line-height: 1.65; }
+
+        /* Section label */
+        .section-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #00E5A0;
+        }
+        .section-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            color: white;
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+        }
+
+        /* Logo strip */
+        .logo-strip {
+            border-top: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 28px 0;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, rgba(0,229,160,0.08) 0%, rgba(0,100,80,0.04) 100%);
+            border: 1px solid rgba(0,229,160,0.15);
+            border-radius: 24px;
+            padding: 64px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(0,229,160,0.08), transparent 70%);
+            top: -100px; left: 50%; transform: translateX(-50%);
+        }
+
+        /* Animations */
+        .fade-up { animation: fadeUp 0.6s ease both; }
+        .fade-up-d1 { animation-delay: 0.1s; }
+        .fade-up-d2 { animation-delay: 0.2s; }
+        .fade-up-d3 { animation-delay: 0.3s; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+    <!-- HERO -->
+    <section class="hero-grid relative py-28 px-4 overflow-hidden">
+        <div class="hero-glow"></div>
+        <div class="max-w-5xl mx-auto relative z-10">
+            <div class="text-center mb-10">
+            <span class="badge-pill fade-up">
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="#00E5A0"><circle cx="4" cy="4" r="4"/></svg>
+                Randevu ve Teklif Platformu
+            </span>
+            </div>
+            <h1 class="hero-title text-center fade-up fade-up-d1">
+                İşletmenizi<br><span class="accent">Dijitale</span> Taşıyın
+            </h1>
+            <p class="hero-sub text-center mx-auto mt-6 fade-up fade-up-d2">
+                Randevular, teklifler, müşteriler ve faturalandırma — hepsi tek bir akıllı panelde. Kurulum: 5 dakika.
+            </p>
+
+            <div class="flex flex-col sm:flex-row justify-center gap-4 mt-10 fade-up fade-up-d3">
+                <a href="/register" class="btn-cta-primary">
+                    Ücretsiz Başla
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <a href="/login" class="btn-cta-secondary">
+                    Giriş Yap
+                </a>
+            </div>
+
+            <!-- Stats -->
+            <div class="flex justify-center gap-12 mt-20 fade-up" style="animation-delay:0.4s">
+                <div class="stat-block">
+                    <div class="stat-num">2.400+</div>
+                    <div class="stat-label">Aktif İşletme</div>
+                </div>
+                <div style="width:1px; background: rgba(255,255,255,0.08);"></div>
+                <div class="stat-block">
+                    <div class="stat-num">98K+</div>
+                    <div class="stat-label">Randevu/Ay</div>
+                </div>
+                <div style="width:1px; background: rgba(255,255,255,0.08);"></div>
+                <div class="stat-block">
+                    <div class="stat-num">4.9★</div>
+                    <div class="stat-label">Kullanıcı Puanı</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LOGO STRIP -->
+    <div class="logo-strip px-4">
+        <div class="max-w-4xl mx-auto flex flex-wrap justify-center gap-10">
+            <p class="w-full text-center text-xs font-semibold tracking-widest uppercase" style="color:rgba(255,255,255,0.2); margin-bottom: 8px;">Bize Güvenen İşletmeler</p>
+            <span style="color:rgba(255,255,255,0.2); font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em;">NINJA BARBER</span>
+            <span style="color:rgba(255,255,255,0.2); font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em;">ZEN SPA</span>
+            <span style="color:rgba(255,255,255,0.2); font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em;">PRO GYM</span>
+            <span style="color:rgba(255,255,255,0.2); font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em;">ELITE CLINIC</span>
+            <span style="color:rgba(255,255,255,0.2); font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em;">TURK PT</span>
+        </div>
+    </div>
+
+    <!-- FEATURES -->
+    <section class="py-28 px-4">
+        <div class="max-w-5xl mx-auto">
+            <div class="text-center mb-16">
+                <span class="section-label">Özellikler</span>
+                <h2 class="section-title mt-3">Bir Platformda Her Şey</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <div class="feature-title">Akıllı Radar</div>
+                    <div class="feature-desc">Çevrenizdeki yeni iş taleplerini anlık takip edin, saniyeler içinde teklif gönderin.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </div>
+                    <div class="feature-title">7/24 Randevu</div>
+                    <div class="feature-desc">Müşteriler siz uyurken bile randevu alabilsin. Takvim çakışması ve manuel onay yok.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                    <div class="feature-title">Gelişmiş ERP</div>
+                    <div class="feature-desc">Faturalandırma, envanter takibi ve CRM tek çatı altında. İşletmenizin nabzını tutun.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+                        </svg>
+                    </div>
+                    <div class="feature-title">Hızlı Kurulum</div>
+                    <div class="feature-desc">5 dakikada dükkanınızı açın. Teknik bilgiye gerek yok, sihirbaz sizi yönlendirir.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+                        </svg>
+                    </div>
+                    <div class="feature-title">Müşteri Yönetimi</div>
+                    <div class="feature-desc">Müşteri geçmişi, notlar ve hatırlatıcılar. Her müşteriyi VIP gibi hissettirir.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                        </svg>
+                    </div>
+                    <div class="feature-title">Online Ödeme</div>
+                    <div class="feature-desc">Güvenli ödeme alın, otomatik fatura gönderin. Nakit takibine son.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="py-16 px-4">
+        <div class="max-w-3xl mx-auto">
+            <div class="cta-section">
+                <span class="section-label">Hazır mısınız?</span>
+                <h2 class="section-title mt-4 mb-4">14 Gün Ücretsiz Deneyin</h2>
+                <p style="color:rgba(255,255,255,0.45); font-size:0.95rem; margin-bottom: 32px;">Kredi kartı gerekmez. İstediğiniz zaman iptal edin.</p>
+                <a href="/register" class="btn-cta-primary" style="font-size:1rem; padding: 16px 40px;">
+                    Hemen Başla
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+</div>
+</body>
+</html>

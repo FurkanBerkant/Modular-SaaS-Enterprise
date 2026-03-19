@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="tr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <meta charset="UTF-8">
+    <title>Randevu Al — Randevio</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <style>
+        .bw-wrap { min-height: calc(100vh - 60px); display: flex; align-items: center; justify-content: center; padding: 48px 16px; position: relative; }
+        .bw-glow { position: absolute; width: 500px; height: 400px; background: radial-gradient(ellipse, rgba(0,229,160,0.06) 0%, transparent 70%); top: 0; left: 50%; transform: translateX(-50%); pointer-events: none; }
+        .bw-card { width: 100%; max-width: 520px; background: rgba(22,27,39,0.95); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 44px; box-shadow: 0 40px 80px rgba(0,0,0,0.4); position: relative; z-index: 1; animation: fadeUp 0.4s ease both; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+        .bw-title { font-weight: 800; font-size: 1.4rem; color: white; letter-spacing: -0.02em; margin-bottom: 4px; }
+        .bw-sub { font-size: 0.83rem; color: rgba(255,255,255,0.38); margin-bottom: 32px; }
+
+        .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.12); transition: all 0.3s; }
+        .step-dot.active { background: #00E5A0; box-shadow: 0 0 8px rgba(0,229,160,0.5); }
+        .step-dot.done { background: rgba(0,229,160,0.4); }
+
+        .field-label { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: rgba(255,255,255,0.38); margin-bottom: 8px; }
+        .field-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 14px; color: white; font-size: 0.875rem; outline: none; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .field-input:focus { border-color: rgba(0,229,160,0.5); background: rgba(0,229,160,0.03); box-shadow: 0 0 0 3px rgba(0,229,160,0.08); }
+        .field-group { margin-bottom: 20px; }
+        select.field-input option { background: #161b27; }
+
+        /* Time slots */
+        .slots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 4px; }
+        .slot-btn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 6px; font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.6); cursor: pointer; transition: all 0.15s; font-family: 'Plus Jakarta Sans', sans-serif; text-align: center; }
+        .slot-btn:hover { border-color: rgba(0,229,160,0.3); color: #00E5A0; background: rgba(0,229,160,0.05); }
+        .slot-btn.selected { background: rgba(0,229,160,0.12); border-color: rgba(0,229,160,0.5); color: #00E5A0; font-weight: 700; }
+
+        .no-slots { font-size: 0.83rem; color: rgba(255,100,100,0.7); font-style: italic; padding: 8px 0; }
+
+        .spinner { width: 20px; height: 20px; border: 2px solid rgba(0,229,160,0.2); border-top-color: #00E5A0; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 20px auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .btn-confirm { width: 100%; background: #00E5A0; color: #0a0a0a; font-weight: 700; font-size: 0.9rem; padding: 14px; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; margin-top: 8px; }
+        .btn-confirm:hover:not(:disabled) { background: #00ffb3; box-shadow: 0 8px 25px rgba(0,229,160,0.3); }
+        .btn-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+    </style>
+
+    <div class="bw-wrap">
+        <div class="bw-glow"></div>
+        <div class="bw-card" x-data="{
+        providerId: '[[${provider != null ? provider.id : ''}]]',
+        selectedService: '',
+        selectedDate: '',
+        availableSlots: [],
+        selectedTime: '',
+        loading: false,
+        booking: false,
+        successMsg: '',
+        errorMsg: '',
+        async fetchSlots() {
+            if (!this.selectedService || !this.selectedDate) return;
+            this.loading = true; this.availableSlots = []; this.selectedTime = '';
+            try {
+                const res = await fetch(`/api/appointments/available-slots?providerId=${this.providerId}&serviceId=${this.selectedService}&date=${this.selectedDate}`);
+                this.availableSlots = await res.json();
+            } catch(e) { console.error(e); }
+            finally { this.loading = false; }
+        },
+        async confirmBooking() {
+            if (!this.selectedTime) return;
+            this.booking = true; this.successMsg = ''; this.errorMsg = '';
+            try {
+                const res = await fetch('/api/appointments/book', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        providerId: this.providerId,
+                        serviceId: this.selectedService,
+                        date: this.selectedDate,
+                        time: this.selectedTime
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    this.successMsg = data.message;
+                    this.selectedTime = ''; this.selectedDate = ''; this.availableSlots = [];
+                } else {
+                    this.errorMsg = data.error || 'Bir hata oluştu.';
+                }
+            } catch(e) { this.errorMsg = 'Bağlantı hatası, lütfen tekrar deneyin.'; }
+            finally { this.booking = false; }
+        }
+    }">
+            <div class="bw-title">Randevu Al</div>
+            <div class="bw-sub">Hizmet ve tarih seçerek uygun saati belirleyin.</div>
+
+            <!-- Progress dots -->
+            <div class="step-indicator">
+                <div class="step-dot active"></div>
+                <div class="step-dot" :class="selectedService ? 'active' : ''"></div>
+                <div class="step-dot" :class="selectedTime ? 'active' : ''"></div>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label">1. Hizmet Seçin</label>
+                <select x-model="selectedService" @change="fetchSlots()" class="field-input">
+                    <option value="" disabled selected>Hizmet seçin</option>
+                    <option value="srv-1">Saç Kesimi — 30 dk · 300 ₺</option>
+                    <option value="srv-2">Cilt Bakımı — 45 dk · 500 ₺</option>
+                </select>
+            </div>
+
+            <div class="field-group" x-show="selectedService" x-transition>
+                <label class="field-label">2. Tarih Seçin</label>
+                <input type="date" x-model="selectedDate" @change="fetchSlots()" class="field-input">
+            </div>
+
+            <div x-show="selectedDate && !loading" x-transition>
+                <div class="field-group">
+                    <label class="field-label">3. Saat Seçin</label>
+                    <template x-if="availableSlots.length === 0">
+                        <div class="no-slots">Bu tarihte uygun saat yok. Başka bir gün deneyin.</div>
+                    </template>
+                    <div class="slots-grid">
+                        <template x-for="slot in availableSlots" :key="slot">
+                            <button type="button" class="slot-btn" :class="selectedTime === slot ? 'selected' : ''"
+                                    @click="selectedTime = slot" x-text="slot"></button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="loading" style="text-align:center;">
+                <div class="spinner"></div>
+            </div>
+
+            <div x-show="successMsg" x-transition
+                 style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:12px 16px;font-size:0.83rem;color:#00E5A0;display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                <span x-text="successMsg"></span>
+            </div>
+            <div x-show="errorMsg" x-transition
+                 style="background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.2);border-radius:10px;padding:12px 16px;font-size:0.83rem;color:#ff6b6b;display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span x-text="errorMsg"></span>
+            </div>
+
+            <button class="btn-confirm" :disabled="!selectedTime || booking" @click="confirmBooking()">
+                <span x-show="!selectedTime && !booking">Saat Seçin</span>
+                <span x-show="selectedTime && !booking">Randevuyu Onayla · <span x-text="selectedTime"></span></span>
+                <span x-show="booking" style="display:flex;align-items:center;gap:8px;justify-content:center;">
+                <span style="width:14px;height:14px;border:2px solid rgba(0,0,0,0.3);border-top-color:#0a0a0a;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;"></span>
+                İşleniyor...
+            </span>
+            </button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

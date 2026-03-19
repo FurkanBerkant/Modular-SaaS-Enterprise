@@ -1,56 +1,114 @@
 <!DOCTYPE html>
 <html lang="tr"
-      xmlns:th="http://www.thymeleaf.org" data-theme="corporate" xmlns:layout="http://www.w3.org/1999/xhtml">
+      xmlns:th="http://www.thymeleaf.org"
+      data-theme="night"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turkninja SaaS Platformu</title>
+    <title>Randevio</title>
 
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" th:href="@{/css/output.css}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        :root {
+            --accent: #00E5A0;
+            --accent-dim: rgba(0,229,160,0.1);
+            --surface: #0f1117;
+            --surface2: #161b27;
+            --border: rgba(255,255,255,0.06);
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body, html {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--surface);
+            color: white;
+            margin: 0; padding: 0;
+        }
+
+        .navbar-main {
+            background: rgba(15,17,23,0.88);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
+            padding: 0 32px;
+            height: 60px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-logo {
+            font-weight: 800; font-size: 1.1rem;
+            letter-spacing: -0.02em; color: white;
+            text-decoration: none;
+        }
+        .nav-logo span { color: var(--accent); }
+
+        .nav-dropdown {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .btn-primary {
+            background: var(--accent); color: #0a0a0a;
+            font-weight: 700; border: none; border-radius: 9px;
+            padding: 9px 18px; cursor: pointer; transition: all 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.85rem; text-decoration: none;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .btn-primary:hover { background: #00ffb3; box-shadow: 0 6px 20px rgba(0,229,160,0.3); }
+        .btn-ghost-nav {
+            background: transparent; color: rgba(255,255,255,0.6);
+            border: 1px solid var(--border); border-radius: 9px;
+            padding: 9px 18px; cursor: pointer; transition: all 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.85rem; text-decoration: none;
+            display: inline-flex; align-items: center;
+        }
+        .btn-ghost-nav:hover { background: rgba(255,255,255,0.05); color: white; }
+
+        main { animation: fadeUp 0.35s ease both; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
-<body class="bg-base-200 min-h-screen text-base-content">
+<body>
 
-<header class="navbar bg-base-100 shadow-sm px-4 md:px-8">
-    <div class="flex-1">
-        <a th:href="@{/}" class="btn btn-ghost text-xl font-bold text-primary">
-            Turkninja Pro
-        </a>
-    </div>
+<header class="navbar-main">
+    <a th:href="@{/}" class="nav-logo">
+        Randevio<span>.</span>
+    </a>
 
-    <div class="flex-none">
-        <div x-data="{ open: false }" class="relative">
-            <button @click="open = !open" class="btn btn-square btn-ghost">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                     class="inline-block w-6 h-6 stroke-current">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M4 6h16M4 12h16M4 18h16"></path>
-                </svg>
-            </button>
+    <div x-data="{ open: false }" class="relative">
+        <button @click="open = !open"
+                style="background:transparent; border:none; cursor:pointer; padding:8px; color:rgba(255,255,255,0.6);">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 style="width:20px;height:20px;" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
 
-            <ul x-show="open"
-                @click.away="open = false"
-                x-transition
-                class="absolute right-0 mt-3 w-52 bg-base-100 shadow-xl rounded-box z-50 p-2 border border-base-200">
-                <li>
-                    <a href="/login" class="btn btn-ghost w-full justify-start btn-sm">Giriş Yap</a>
-                </li>
-                <li>
-                    <a href="/register" class="btn btn-primary w-full mt-2 btn-sm text-white">İşletme Kaydı</a>
-                </li>
-            </ul>
+        <div x-show="open" @click.away="open = false"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             class="nav-dropdown"
+             style="position:absolute; right:0; top:calc(100% + 8px); width:200px; padding:8px; display:none;">
+            <a href="/login" class="btn-ghost-nav" style="width:100%; margin-bottom:6px;">Giriş Yap</a>
+            <a href="/register" class="btn-primary" style="width:100%;">İşletme Kaydı</a>
         </div>
     </div>
 </header>
 
-<main class="container mx-auto p-4 md:p-8">
-    <div layout:fragment="content">
-        <div class="text-center py-10">
-            <h1 class="text-2xl font-bold">Hoş Geldiniz!</h1>
-            <p class="opacity-60">İçerik eklemek için bu fragment'ı kullanın.</p>
-        </div>
-    </div>
+<main style="min-height: calc(100vh - 60px);">
+    <div layout:fragment="content"></div>
 </main>
 
 </body>

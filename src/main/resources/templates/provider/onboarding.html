@@ -1,102 +1,204 @@
 <!DOCTYPE html>
-<html lang="tr" xmlns:layout="http://www.w3.org/1999/xhtml">
-
+<html lang="tr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sağlayıcı Kaydı - Adım 1</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script>
-        // Mapper: data-* attributes -> Alpine attributes. Runs on DOMContentLoaded before Alpine (Alpine deferred).
-        document.addEventListener('DOMContentLoaded', function () {
-            const map = {
-                'data-x-data': 'x-data',
-                'data-x-show': 'x-show',
-                'data-x-transition': 'x-transition',
-                'data-x-model': 'x-model',
-                'data-x-text': 'x-text',
-                'data-bind-class': ':class',
-                'data-bind-disabled': ':disabled',
-                'data-on-click': '@click'
-            };
-            Object.keys(map).forEach(function (src) {
-                document.querySelectorAll('[' + src + ']').forEach(function (el) {
-                    const val = el.getAttribute(src);
-                    el.setAttribute(map[src], val);
-                    el.removeAttribute(src);
-                });
-            });
-        });
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
+    <title>İşletme Kurulumu — Randevio</title>
 </head>
+<body>
+<div layout:fragment="content">
+    <style>
+        .ob-wrap {
+            min-height: calc(100vh - 60px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 48px 16px;
+            position: relative;
+        }
+        .ob-glow {
+            position: absolute; width: 600px; height: 400px;
+            background: radial-gradient(ellipse, rgba(0,229,160,0.06) 0%, transparent 70%);
+            top: 0; left: 50%; transform: translateX(-50%); pointer-events: none;
+        }
+        .ob-card {
+            width: 100%; max-width: 560px;
+            background: rgba(22,27,39,0.95);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px;
+            padding: 48px 44px;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.4);
+            position: relative; z-index: 1;
+            animation: fadeUp 0.4s ease both;
+        }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
-<body class="bg-gray-100">
-    <div layout:fragment="content">
-        <div data-x-data="{ step: 1, businessName: '', category: '' }" class="max-w-2xl mx-auto mt-10 p-6 bg-base-100 rounded-lg shadow-2xl">
-            <ul class="steps w-full mb-8">
-                <li class="step" data-bind-class="step >= 1 ? 'step-primary' : ''">Temel Bilgiler</li>
-                <li class="step" data-bind-class="step >= 2 ? 'step-primary' : ''">&#304;leti&#351;im & Adres</li>
-                <li class="step" data-bind-class="step >= 3 ? 'step-primary' : ''">Tamamla</li>
-            </ul>
+        /* Stepper */
+        .stepper { display: flex; align-items: center; gap: 0; margin-bottom: 40px; }
+        .step-item { display: flex; align-items: center; gap: 10px; flex: 1; }
+        .step-item:last-child { flex: 0; }
+        .step-circle {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.3);
+            transition: all 0.3s;
+        }
+        .step-circle.active { background: #00E5A0; border-color: #00E5A0; color: #0a0a0a; }
+        .step-circle.done { background: rgba(0,229,160,0.15); border-color: rgba(0,229,160,0.4); color: #00E5A0; }
+        .step-line { flex: 1; height: 2px; background: rgba(255,255,255,0.07); margin: 0 8px; }
+        .step-line.done { background: rgba(0,229,160,0.3); }
+        .step-label { font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.3); white-space: nowrap; }
+        .step-label.active { color: #00E5A0; }
+
+        .step-title { font-weight: 800; font-size: 1.3rem; color: white; margin-bottom: 6px; letter-spacing: -0.01em; }
+        .step-sub { font-size: 0.83rem; color: rgba(255,255,255,0.4); margin-bottom: 28px; }
+
+        .field-label { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: rgba(255,255,255,0.38); margin-bottom: 8px; }
+        .field-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 13px 16px; color: white; font-size: 0.88rem; outline: none; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .field-input:focus { border-color: rgba(0,229,160,0.5); background: rgba(0,229,160,0.03); box-shadow: 0 0 0 3px rgba(0,229,160,0.08); }
+        .field-input::placeholder { color: rgba(255,255,255,0.18); }
+        .field-group { margin-bottom: 18px; }
+
+        .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 32px; }
+        .btn-next { background: #00E5A0; color: #0a0a0a; font-weight: 700; font-size: 0.9rem; padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .btn-next:hover:not(:disabled) { background: #00ffb3; box-shadow: 0 6px 20px rgba(0,229,160,0.3); }
+        .btn-next:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-back { background: transparent; color: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 22px; cursor: pointer; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.9rem; }
+        .btn-back:hover { background: rgba(255,255,255,0.05); color: white; }
+        .btn-finish { background: #00E5A0; color: #0a0a0a; font-weight: 700; font-size: 0.9rem; padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .btn-finish:hover { background: #00ffb3; box-shadow: 0 6px 20px rgba(0,229,160,0.3); }
+
+        .confirm-box { background: rgba(0,229,160,0.06); border: 1px solid rgba(0,229,160,0.15); border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; }
+        .confirm-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .confirm-row:last-child { border-bottom: none; }
+        .confirm-key { font-size: 0.78rem; color: rgba(255,255,255,0.35); font-weight: 600; }
+        .confirm-val { font-size: 0.88rem; color: white; font-weight: 700; }
+
+        select.field-input option { background: #161b27; }
+    </style>
+
+    <div class="ob-wrap">
+        <div class="ob-glow"></div>
+        <div class="ob-card"
+             x-data="{
+            step: 1,
+            businessName: '',
+            category: '',
+            categoryLabel: '',
+            city: '',
+            fullAddress: ''
+         }">
+
+            <!-- Stepper -->
+            <div class="stepper">
+                <div class="step-item">
+                    <div class="step-circle" :class="step > 1 ? 'done' : step === 1 ? 'active' : ''">
+                        <span x-show="step <= 1">1</span>
+                        <svg x-show="step > 1" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                    <span class="step-label" :class="step === 1 ? 'active' : ''">İşletme</span>
+                </div>
+                <div class="step-line" :class="step > 1 ? 'done' : ''"></div>
+                <div class="step-item">
+                    <div class="step-circle" :class="step > 2 ? 'done' : step === 2 ? 'active' : ''">
+                        <span x-show="step <= 2">2</span>
+                        <svg x-show="step > 2" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                    <span class="step-label" :class="step === 2 ? 'active' : ''">Konum</span>
+                </div>
+                <div class="step-line" :class="step > 2 ? 'done' : ''"></div>
+                <div class="step-item">
+                    <div class="step-circle" :class="step === 3 ? 'active' : ''">3</div>
+                    <span class="step-label" :class="step === 3 ? 'active' : ''">Onayla</span>
+                </div>
+            </div>
 
             <form action="/provider/onboarding" method="POST">
-                <div data-x-show="step === 1" data-x-transition>
-                    <h3 class="text-xl font-bold mb-4">&#304;&#351;letmenizi Tanıtın</h3>
 
-                    <div class="form-control mb-4">
-                        <label class="label" for="businessName">&#304;&#351;letme Adı</label>
-                        <input id="businessName" type="text" name="businessName" data-x-model="businessName" class="input input-bordered"
-                            placeholder="&#214;rn: Turkninja Ya&#351;am Ko&#231;lu&#287;u" required />
+                <!-- Step 1 -->
+                <div x-show="step === 1" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-4">
+                    <div class="step-title">İşletmenizi Tanıtın</div>
+                    <div class="step-sub">Temel bilgilerle başlayalım.</div>
+
+                    <div class="field-group">
+                        <label class="field-label">İşletme Adı</label>
+                        <input type="text" name="businessName" x-model="businessName" class="field-input" placeholder="Örn: Ahmet Kuaför Salonu" required>
                     </div>
-
-                    <div class="form-control mb-4">
-                        <label class="label" for="category">Kategoriniz</label>
-                        <select id="category" name="category" data-x-model="category" class="select select-bordered" required>
-                            <option value="" disabled selected>Kategori Se&#231;in</option>
-                            <option value="PSIKOLOG">Psikolog</option>
-                            <option value="SPOR_HOCASI">Spor E&#287;itmeni</option>
-                            <option value="KUAFOR">Kuaf&#246;r / G&#252;zellik</option>
+                    <div class="field-group">
+                        <label class="field-label">Kategoriniz</label>
+                        <select name="category" x-model="category" class="field-input" required
+                                @change="categoryLabel = $event.target.options[$event.target.selectedIndex].text">
+                            <option value="" disabled selected>Kategori Seçin</option>
+                            <option value="PSIKOLOG">Psikolog / Terapist</option>
+                            <option value="SPOR_HOCASI">Spor Eğitmeni / PT</option>
+                            <option value="KUAFOR">Kuaför / Güzellik</option>
+                            <option value="YASAM_KOCU">Yaşam Koçu</option>
                         </select>
                     </div>
 
-                    <button type="button" class="btn btn-primary float-right" data-on-click="step = 2"
-                        data-bind-disabled="!businessName || !category">&#304;leri</button>
-                </div>
-
-                <div data-x-show="step === 2" data-x-transition style="display: none;">
-                    <h3 class="text-xl font-bold mb-4">Neredesiniz?</h3>
-
-                    <div class="form-control mb-4">
-                        <label class="label" for="city">&#350;ehir</label>
-                        <input id="city" type="text" name="city" class="input input-bordered" placeholder="&#214;rn: &#304;stanbul" />
-                    </div>
-
-                    <div class="form-control mb-4">
-                        <label class="label" for="fullAddress">A&#231;&#305;k Adres</label>
-                        <textarea id="fullAddress" name="fullAddress" class="textarea textarea-bordered h-24"
-                            placeholder="Tam adresinizi girin..."></textarea>
-                    </div>
-
-                    <div class="flex justify-between">
-                        <button type="button" class="btn btn-ghost" data-on-click="step = 1">Geri</button>
-                        <button type="button" class="btn btn-primary" data-on-click="step = 3">&#304;leri</button>
+                    <div class="nav-row">
+                        <span></span>
+                        <button type="button" class="btn-next" @click="step = 2" :disabled="!businessName || !category">
+                            İleri →
+                        </button>
                     </div>
                 </div>
 
-                <div data-x-show="step === 3" data-x-transition style="display: none;">
-                    <h3 class="text-xl font-bold mb-4">Harika! Son Kontrol</h3>
-                    <p class="mb-6">Sisteme <strong><span data-x-text="businessName"></span></strong> adıyla, <strong><span
-                                data-x-text="category"></span></strong> kategorisinde kayıt oluyorsunuz.</p>
+                <!-- Step 2 -->
+                <div x-show="step === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-4" style="display:none">
+                    <div class="step-title">Neredesiniz?</div>
+                    <div class="step-sub">Müşterileriniz sizi bulsun.</div>
 
-                    <div class="flex justify-between">
-                        <button type="button" class="btn btn-ghost" data-on-click="step = 2">Geri</button>
-                        <button type="submit" class="btn btn-success">D&#252;kkanı A&#231;!</button>
+                    <div class="field-group">
+                        <label class="field-label">Şehir</label>
+                        <input type="text" name="city" x-model="city" class="field-input" placeholder="Örn: İstanbul">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Açık Adres</label>
+                        <textarea name="fullAddress" x-model="fullAddress" class="field-input" style="height:100px; resize:none;" placeholder="Mahalle, cadde, bina no..."></textarea>
+                    </div>
+
+                    <div class="nav-row">
+                        <button type="button" class="btn-back" @click="step = 1">← Geri</button>
+                        <button type="button" class="btn-next" @click="step = 3">İleri →</button>
                     </div>
                 </div>
+
+                <!-- Step 3 -->
+                <div x-show="step === 3" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-4" style="display:none">
+                    <div class="step-title">Son Kontrol</div>
+                    <div class="step-sub">Bilgilerinizi onaylayın, dükkanınızı açalım.</div>
+
+                    <div class="confirm-box">
+                        <div class="confirm-row">
+                            <span class="confirm-key">İşletme Adı</span>
+                            <span class="confirm-val" x-text="businessName"></span>
+                        </div>
+                        <div class="confirm-row">
+                            <span class="confirm-key">Kategori</span>
+                            <span class="confirm-val" x-text="categoryLabel"></span>
+                        </div>
+                        <div class="confirm-row">
+                            <span class="confirm-key">Şehir</span>
+                            <span class="confirm-val" x-text="city || '—'"></span>
+                        </div>
+                        <div class="confirm-row">
+                            <span class="confirm-key">Adres</span>
+                            <span class="confirm-val" x-text="fullAddress || '—'" style="max-width:200px; text-align:right;"></span>
+                        </div>
+                    </div>
+
+                    <div class="nav-row">
+                        <button type="button" class="btn-back" @click="step = 2">← Geri</button>
+                        <button type="submit" class="btn-finish">Dükkanı Aç! 🎉</button>
+                    </div>
+                </div>
+
             </form>
         </div>
     </div>
+</div>
 </body>
-
 </html>

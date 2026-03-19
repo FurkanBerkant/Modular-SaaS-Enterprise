@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="tr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <meta charset="UTF-8">
+    <title>İşletme Kaydı — Randevio</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <style>
+        .reg-wrap {
+            min-height: calc(100vh - 64px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 48px 16px;
+            position: relative;
+        }
+        .reg-glow {
+            position: absolute;
+            width: 700px; height: 400px;
+            background: radial-gradient(ellipse, rgba(0,229,160,0.06) 0%, transparent 70%);
+            top: 0; left: 50%; transform: translateX(-50%);
+            pointer-events: none;
+        }
+        .reg-card {
+            width: 100%; max-width: 960px;
+            background: rgba(22, 27, 39, 0.95);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.4);
+            display: flex;
+            position: relative; z-index: 1;
+            animation: fadeUp 0.5s ease both;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Sidebar */
+        .reg-sidebar {
+            width: 300px; flex-shrink: 0;
+            background: linear-gradient(160deg, rgba(0,229,160,0.1) 0%, rgba(0,80,60,0.06) 100%);
+            border-right: 1px solid rgba(0,229,160,0.08);
+            padding: 44px 32px;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .reg-sidebar-brand { color: #00E5A0; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 14px; }
+        .reg-sidebar-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.6rem; line-height: 1.15; letter-spacing: -0.02em; color: white; }
+        .reg-sidebar-sub { font-size: 0.83rem; color: rgba(255,255,255,0.4); margin-top: 10px; line-height: 1.65; }
+        .perk-list { margin-top: 36px; display: flex; flex-direction: column; gap: 22px; }
+        .perk-item { display: flex; align-items: flex-start; gap: 14px; }
+        .perk-icon { width: 34px; height: 34px; flex-shrink: 0; background: rgba(0,229,160,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #00E5A0; }
+        .perk-title { font-weight: 700; font-size: 0.85rem; color: white; }
+        .perk-desc { font-size: 0.76rem; color: rgba(255,255,255,0.38); margin-top: 3px; line-height: 1.5; }
+        .sidebar-footer { font-size: 0.72rem; color: rgba(255,255,255,0.18); font-weight: 600; letter-spacing: 0.04em; }
+
+        /* Form side */
+        .reg-form-side { flex: 1; padding: 44px 44px; overflow-y: auto; }
+        .reg-form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 36px; }
+        .reg-form-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.3rem; color: white; letter-spacing: -0.02em; }
+        .login-link { font-size: 0.82rem; color: rgba(255,255,255,0.38); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 5px; transition: color 0.2s; }
+        .login-link:hover { color: #00E5A0; }
+
+        /* Section blocks — key fix: each block has its own bottom margin */
+        .section-block { margin-bottom: 28px; }
+        .section-tag {
+            font-size: 0.67rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+            color: rgba(255,255,255,0.25);
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 18px;
+        }
+
+        /* Grid: gap both axes */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 16px; }
+        .form-grid .full { grid-column: span 2; }
+
+        .field-label {
+            display: block; font-size: 0.71rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.38); margin-bottom: 8px;
+        }
+        .field-input {
+            width: 100%; box-sizing: border-box;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 13px 16px;
+            color: white; font-size: 0.875rem;
+            transition: all 0.2s; outline: none;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .field-input:focus {
+            border-color: rgba(0,229,160,0.5);
+            background: rgba(0,229,160,0.03);
+            box-shadow: 0 0 0 3px rgba(0,229,160,0.08);
+        }
+        .field-input::placeholder { color: rgba(255,255,255,0.2); }
+
+        .terms-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+        .terms-row input[type="checkbox"] { accent-color: #00E5A0; width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; cursor: pointer; }
+        .terms-text { font-size: 0.82rem; color: rgba(255,255,255,0.38); line-height: 1.55; }
+        .terms-text a { color: #00E5A0; text-decoration: none; font-weight: 600; }
+        .terms-text a:hover { text-decoration: underline; }
+
+        .btn-submit {
+            width: 100%;
+            background: #00E5A0; color: #0a0a0a;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 0.95rem;
+            padding: 14px; border-radius: 10px; border: none;
+            cursor: pointer; transition: all 0.2s; margin-top: 20px;
+        }
+        .btn-submit:hover { background: #00ffb3; box-shadow: 0 8px 25px rgba(0,229,160,0.3); }
+        .free-note { text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.18); margin-top: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+
+        @media (max-width: 768px) {
+            .reg-card { flex-direction: column; }
+            .reg-sidebar { width: 100%; }
+            .form-grid { grid-template-columns: 1fr; }
+            .reg-form-side { padding: 32px 24px; }
+        }
+    </style>
+
+    <div class="reg-wrap">
+        <div class="reg-glow"></div>
+        <div class="reg-card">
+
+            <!-- Sidebar -->
+            <div class="reg-sidebar">
+                <div>
+                    <div class="reg-sidebar-brand">Randevıo</div>
+                    <div class="reg-sidebar-title">Gücünü Keşfet</div>
+                    <div class="reg-sidebar-sub">İşletmenizi dijitalleştirin. Randevular ve ödemeler artık otomatik.</div>
+
+                    <div class="perk-list">
+                        <div class="perk-item">
+                            <div class="perk-icon">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            </div>
+                            <div>
+                                <div class="perk-title">Hızlı Kurulum</div>
+                                <div class="perk-desc">5 dakikada dükkanınızı açın.</div>
+                            </div>
+                        </div>
+                        <div class="perk-item">
+                            <div class="perk-icon">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                            </div>
+                            <div>
+                                <div class="perk-title">7/24 Randevu</div>
+                                <div class="perk-desc">Müşteriler siz uyurken randevu alsın.</div>
+                            </div>
+                        </div>
+                        <div class="perk-item">
+                            <div class="perk-icon">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            </div>
+                            <div>
+                                <div class="perk-title">Analitik Panel</div>
+                                <div class="perk-desc">Büyümenizi raporlarla izleyin.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-footer">RANDEVIO © 2026</div>
+            </div>
+
+            <!-- Form -->
+            <div class="reg-form-side">
+                <div class="reg-form-header">
+                    <div class="reg-form-title">Yeni İşletme Kaydı</div>
+                    <a href="/login" class="login-link">
+                        Giriş Yap
+                        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+
+                <form th:action="@{/register}" method="POST">
+
+                    <div class="section-block">
+                        <div class="section-tag">Kişisel Bilgiler</div>
+                        <div class="form-grid">
+                            <div>
+                                <label class="field-label">Ad Soyad</label>
+                                <input type="text" name="fullName" required class="field-input" placeholder="Ahmet Yılmaz">
+                            </div>
+                            <div>
+                                <label class="field-label">E-posta Adresi</label>
+                                <input type="email" name="email" required class="field-input" placeholder="ahmet@mail.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-block">
+                        <div class="section-tag">İşletme Bilgileri</div>
+                        <div class="form-grid">
+                            <div>
+                                <label class="field-label">İşletme Adı</label>
+                                <input type="text" name="businessName" required class="field-input" placeholder="Örn: Ahmet Kuaför">
+                            </div>
+                            <div>
+                                <label class="field-label">Telefon</label>
+                                <input type="tel" name="phone" required class="field-input" placeholder="05XX XXX XX XX">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-block">
+                        <div class="section-tag">Şifre</div>
+                        <div class="form-grid">
+                            <div>
+                                <label class="field-label">Şifre</label>
+                                <input type="password" name="password" required class="field-input" placeholder="••••••••">
+                            </div>
+                            <div>
+                                <label class="field-label">Şifre Tekrar</label>
+                                <input type="password" name="confirmPassword" required class="field-input" placeholder="••••••••">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="terms-row">
+                        <input type="checkbox" required>
+                        <span class="terms-text">
+                        <a href="#">Kullanım Koşulları</a>'nı ve <a href="#">Gizlilik Sözleşmesi</a>'ni okudum, onaylıyorum.
+                    </span>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Kayıt Ol ve Başla</button>
+                    <div class="free-note">Kredi kartı gerekmez · 14 gün ücretsiz</div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+</body>
+</html>

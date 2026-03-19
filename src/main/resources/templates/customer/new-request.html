@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="tr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <meta charset="UTF-8">
+    <title>Hizmet Talebi — Randevio</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <style>
+        .nr-wrap { min-height: calc(100vh - 60px); display: flex; align-items: center; justify-content: center; padding: 48px 16px; position: relative; }
+        .nr-glow { position: absolute; width: 500px; height: 400px; background: radial-gradient(ellipse, rgba(0,229,160,0.06) 0%, transparent 70%); top: 0; left: 50%; transform: translateX(-50%); pointer-events: none; }
+        .nr-card { width: 100%; max-width: 560px; background: rgba(22,27,39,0.95); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 44px; box-shadow: 0 40px 80px rgba(0,0,0,0.4); position: relative; z-index: 1; animation: fadeUp 0.4s ease both; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+        .nr-title { font-weight: 800; font-size: 1.5rem; color: white; letter-spacing: -0.02em; margin-bottom: 6px; }
+        .nr-sub { font-size: 0.85rem; color: rgba(255,255,255,0.4); margin-bottom: 32px; line-height: 1.5; }
+
+        .field-label { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: rgba(255,255,255,0.38); margin-bottom: 8px; }
+        .field-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 14px; color: white; font-size: 0.875rem; outline: none; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .field-input:focus { border-color: rgba(0,229,160,0.5); background: rgba(0,229,160,0.03); box-shadow: 0 0 0 3px rgba(0,229,160,0.08); }
+        .field-input::placeholder { color: rgba(255,255,255,0.18); }
+        .field-group { margin-bottom: 18px; }
+        select.field-input option { background: #161b27; }
+
+        .success-box { background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.2); border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: #00E5A0; margin-bottom: 20px; }
+
+        .btn-submit { width: 100%; background: #00E5A0; color: #0a0a0a; font-weight: 700; font-size: 0.9rem; padding: 14px; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; }
+        .btn-submit:hover:not(:disabled) { background: #00ffb3; box-shadow: 0 8px 25px rgba(0,229,160,0.3); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .spinner { width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #0a0a0a; border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+
+    <div class="nr-wrap">
+        <div class="nr-glow"></div>
+        <div class="nr-card" x-data="{
+        kategori: '', baslik: '', detay: '', butce: '',
+        loading: false, mesaj: '',
+        async submitForm() {
+            this.loading = true; this.mesaj = '';
+            try {
+                await fetch('/api/requests/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category: this.kategori, title: this.baslik, description: this.detay, maxBudget: this.butce })
+                });
+                this.mesaj = 'Talebiniz yayına alındı! Profesyonellerden teklif bekleyebilirsiniz.';
+                this.kategori = ''; this.baslik = ''; this.detay = ''; this.butce = '';
+            } catch { this.mesaj = 'Bir hata oluştu, lütfen tekrar deneyin.'; }
+            finally { this.loading = false; }
+        }
+    }">
+            <div class="nr-title">Hizmet Talebi Oluştur</div>
+            <div class="nr-sub">İhtiyacınızı anlatın, size uygun profesyoneller teklif sunsun.</div>
+
+            <div x-show="mesaj" class="success-box" x-transition>
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                <span x-text="mesaj"></span>
+            </div>
+
+            <form @submit.prevent="submitForm()">
+                <div class="field-group">
+                    <label class="field-label">Hizmet Alanı</label>
+                    <select x-model="kategori" class="field-input" required>
+                        <option value="" disabled selected>Seçiniz</option>
+                        <option value="SPOR_HOCASI">Kişisel Antrenör (PT)</option>
+                        <option value="PSIKOLOG">Psikolog / Terapist</option>
+                        <option value="YASAM_KOCU">Yaşam Koçu</option>
+                        <option value="KUAFOR">Kuaför / Güzellik</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Talep Başlığı</label>
+                    <input type="text" x-model="baslik" class="field-input" placeholder="Örn: Evde pilates dersi almak istiyorum" required>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Detaylar</label>
+                    <textarea x-model="detay" class="field-input" style="height:110px; resize:vertical;" placeholder="Hedeflerinizi ve beklentilerinizi yazın..." required></textarea>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Maksimum Bütçe (₺)</label>
+                    <input type="number" x-model="butce" class="field-input" placeholder="Örn: 2000" required>
+                </div>
+
+                <button type="submit" class="btn-submit" :disabled="loading">
+                    <div class="spinner" x-show="loading"></div>
+                    <span x-show="!loading">Talebi Yayınla</span>
+                    <span x-show="loading">Yayınlanıyor...</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
