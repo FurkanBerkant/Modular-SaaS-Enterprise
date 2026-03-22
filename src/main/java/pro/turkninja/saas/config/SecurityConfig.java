@@ -1,5 +1,6 @@
 package pro.turkninja.saas.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,44 +14,39 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import pro.turkninja.saas.security.CustomOAuth2UserService;
+import pro.turkninja.saas.tenant.TenantFilter;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import pro.turkninja.saas.tenant.TenantFilter;
 
 @EnableWebSecurity
 @Configuration
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-                        .requestMatchers(
-                                "/", "/login", "/register",
-                                "/css/**", "/js/**", "/images/**", "/uploads/**", "/webjars/**"
-                        ).permitAll()
-
-                        // Provider sayfaları
-                        .requestMatchers("/dashboard", "/provider/**").hasRole("PROVIDER")
-
-                        // Employee sayfaları
-                        .requestMatchers("/employee/**").hasAnyRole("EMPLOYEE", "PROVIDER")
-
-                        // Customer sayfaları
-                        .requestMatchers("/booking", "/request").hasAnyRole("CUSTOMER", "PROVIDER")
-
-                        // Onboarding: giriş yapmış herkes erişebilir (rol CUSTOMER → PROVIDER geçişi burada)
+                        .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                        // Onboarding: giriş yapmış herkes erişebilir (CUSTOMER → PROVIDER dönüşümü için)
                         .requestMatchers("/provider/onboarding").authenticated()
-
-                        // API'ler: authenticated, method-level @PreAuthorize ile korunuyor
+                        .requestMatchers("/dashboard", "/provider/**").hasRole("PROVIDER")
+                        .requestMatchers("/employee/**").hasRole("EMPLOYEE")
+                        .requestMatchers("/booking", "/request").hasRole("CUSTOMER")
                         .requestMatchers("/api/**").authenticated()
-
-                        // Admin
                         .requestMatchers("/admin/**").hasRole("SUPER_ADMIN")
-
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -60,14 +56,15 @@ public class SecurityConfig {
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)
+                        )
                         .successHandler(roleBasedSuccessHandler())
                 )
                 .logout(logout -> logout
                         .logoutSuccessUrl("/")
                         .permitAll()
                 )
-                // CSRF aktif — HTML form'lar th:action ile otomatik token alır,
-                // fetch istekleri th:data-csrf-token ile header'a ekler.
                 .addFilterAfter(new TenantFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -82,7 +79,9 @@ public class SecurityConfig {
             } else if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_EMPLOYEE"))) {
                 redirectUrl = "/employee/dashboard";
             } else if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_CUSTOMER"))) {
-                redirectUrl = "/booking";
+                // Müşteri giriş yapınca onboarding'e yönlendir
+                // (İşletme sahibi olmak istiyorsa oradan devam eder)
+                redirectUrl = "/provider/onboarding";
             } else if (auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"))) {
                 redirectUrl = "/admin";
             } else {

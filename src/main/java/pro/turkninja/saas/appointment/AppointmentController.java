@@ -17,45 +17,32 @@ public class AppointmentController {
     private final BookingService bookingService;
     private final AppointmentRepository repository;
 
-    /**
-     * Belirtilen tarihte dolu olmayan saatleri döner.
-     * Dolu saatler veritabanından çekilir, sabit listeden çıkarılır.
-     */
+    private static final List<String> ALL_SLOTS = List.of(
+            "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+            "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
+            "16:00", "16:30", "17:00"
+    );
+
     @GetMapping("/available-slots")
     public List<String> getAvailableSlots(
             @RequestParam String providerId,
             @RequestParam String serviceId,
             @RequestParam String date) {
 
-        List<String> allSlots = List.of(
-                "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-                "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
-                "16:00", "16:30", "17:00"
-        );
-
-        // O gün o provider'ın dolu saatlerini çek (PENDING + APPROVED)
+        // ✅ Tek sorguda o günün dolu saatleri — N+1 yok
         List<String> bookedTimes = repository
-                .findByProviderIdAndStatusOrderByDateAscTimeAsc(providerId, AppointmentStatus.PENDING)
+                .findByProviderIdAndDateAndStatusIn(
+                        providerId, date,
+                        List.of(AppointmentStatus.PENDING, AppointmentStatus.APPROVED))
                 .stream()
-                .filter(a -> date.equals(a.getDate()))
                 .map(Appointment::getTime)
                 .toList();
 
-        List<String> approvedTimes = repository
-                .findByProviderIdAndStatusOrderByDateAscTimeAsc(providerId, AppointmentStatus.APPROVED)
-                .stream()
-                .filter(a -> date.equals(a.getDate()))
-                .map(Appointment::getTime)
-                .toList();
-
-        return allSlots.stream()
-                .filter(slot -> !bookedTimes.contains(slot) && !approvedTimes.contains(slot))
+        return ALL_SLOTS.stream()
+                .filter(slot -> !bookedTimes.contains(slot))
                 .toList();
     }
 
-    /**
-     * Randevu oluşturur. CSRF token header üzerinden gelir (booking-widget.html'de set ediliyor).
-     */
     @PostMapping("/book")
     public ResponseEntity<?> book(
             @RequestBody BookingRequest request,
@@ -66,7 +53,8 @@ public class AppointmentController {
                     request.providerId(),
                     currentUser.getId(),
                     request.date(),
-                    request.time()
+                    request.time(),
+                    request.serviceId()
             );
             return ResponseEntity.ok(Map.of("message", message));
         } catch (IllegalStateException e) {
@@ -74,7 +62,6 @@ public class AppointmentController {
         }
     }
 
-    // ── Request DTO ───────────────────────────────────────────────────────────
     record BookingRequest(
             String providerId,
             String serviceId,

@@ -13,20 +13,25 @@ public class BookingService {
         this.repository = repository;
     }
 
-    public String bookAppointment(String providerId, String customerId, String date, String time) {
+    // ✅ serviceId parametresi eklendi
+    public String bookAppointment(String providerId, String customerId,
+                                  String date, String time, String serviceId) {
         try {
             Appointment newAppointment = new Appointment();
             newAppointment.setProviderId(providerId);
             newAppointment.setCustomerId(customerId);
             newAppointment.setDate(date);
             newAppointment.setTime(time);
+            newAppointment.setServiceId(serviceId); // ✅ artık kaydediliyor
             newAppointment.setStatus(AppointmentStatus.PENDING);
 
             repository.save(newAppointment);
             return "Randevu talebiniz başarıyla alındı. İşletmenin onayı bekleniyor.";
 
         } catch (DuplicateKeyException | OptimisticLockingFailureException e) {
-            throw new IllegalStateException("Üzgünüz, bu saat dilimi az önce başka bir kullanıcı tarafından rezerve edildi. Lütfen başka bir saat seçiniz.");
+            throw new IllegalStateException(
+                    "Üzgünüz, bu saat dilimi az önce başka bir kullanıcı tarafından " +
+                            "rezerve edildi. Lütfen başka bir saat seçiniz.");
         }
     }
 }
