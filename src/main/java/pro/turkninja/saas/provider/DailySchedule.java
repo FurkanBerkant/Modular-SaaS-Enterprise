@@ -7,5 +7,5 @@ public record DailySchedule(
         DayOfWeek dayOfWeek,
         LocalTime startTime,
         LocalTime endTime,
-        boolean isDayOff
+        boolean dayOff
 ) {}

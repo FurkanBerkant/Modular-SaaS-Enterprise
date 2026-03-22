@@ -23,14 +23,12 @@ public class ProviderService {
         String providerId = TenantContext.getTenantId();
         Provider provider = providerRepository.findById(providerId).orElseThrow();
 
-
         ServiceItem newItem = new ServiceItem(
                 UUID.randomUUID().toString(),
                 name,
                 duration,
                 price
         );
-
 
         provider.getServices().add(newItem);
         providerRepository.save(provider);
@@ -40,7 +38,6 @@ public class ProviderService {
     public void completeOnboarding(ProviderOnboardingRequest request) {
         String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         AppUser user = userRepository.findByEmail(currentUserEmail).orElseThrow();
-
 
         user.setRole(UserRole.PROVIDER);
         userRepository.save(user);
@@ -59,5 +56,9 @@ public class ProviderService {
     public Provider getCurrentProvider() {
         String providerId = TenantContext.getTenantId();
         return providerRepository.findById(providerId).orElseThrow();
+    }
+
+    public void deleteAllProviders() {
+        providerRepository.deleteAll();
     }
 }

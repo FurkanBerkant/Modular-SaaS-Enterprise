@@ -34,25 +34,68 @@
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 
+    <!-- Alpine component ayrı script'e taşındı; CSRF data-attribute'tan okunuyor -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('newRequestWidget', () => ({
+                csrfToken:  '',
+                csrfHeader: '',
+                kategori: '',
+                baslik:   '',
+                detay:    '',
+                butce:    '',
+                loading:  false,
+                mesaj:    '',
+
+                init() {
+                    this.csrfToken  = this.$el.dataset.csrfToken  || '';
+                    this.csrfHeader = this.$el.dataset.csrfHeader || 'X-CSRF-TOKEN';
+                },
+
+                async submitForm() {
+                    this.loading = true;
+                    this.mesaj = '';
+                    try {
+                        const res = await fetch('/api/requests/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                // CSRF header — 403 hatası bu satırla çözülür
+                                [this.csrfHeader]: this.csrfToken
+                            },
+                            body: JSON.stringify({
+                                category:    this.kategori,
+                                title:       this.baslik,
+                                description: this.detay,
+                                maxBudget:   this.butce
+                            })
+                        });
+                        if (res.ok) {
+                            this.mesaj = 'Talebiniz yayına alındı! Profesyonellerden teklif bekleyebilirsiniz.';
+                            this.kategori = '';
+                            this.baslik   = '';
+                            this.detay    = '';
+                            this.butce    = '';
+                        } else {
+                            this.mesaj = 'Bir hata oluştu, lütfen tekrar deneyin.';
+                        }
+                    } catch {
+                        this.mesaj = 'Bağlantı hatası, lütfen tekrar deneyin.';
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }));
+        });
+    </script>
+
     <div class="nr-wrap">
         <div class="nr-glow"></div>
-        <div class="nr-card" x-data="{
-        kategori: '', baslik: '', detay: '', butce: '',
-        loading: false, mesaj: '',
-        async submitForm() {
-            this.loading = true; this.mesaj = '';
-            try {
-                await fetch('/api/requests/create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ category: this.kategori, title: this.baslik, description: this.detay, maxBudget: this.butce })
-                });
-                this.mesaj = 'Talebiniz yayına alındı! Profesyonellerden teklif bekleyebilirsiniz.';
-                this.kategori = ''; this.baslik = ''; this.detay = ''; this.butce = '';
-            } catch { this.mesaj = 'Bir hata oluştu, lütfen tekrar deneyin.'; }
-            finally { this.loading = false; }
-        }
-    }">
+        <div class="nr-card"
+             x-data="newRequestWidget"
+             th:data-csrf-token="${_csrf.token}"
+             th:data-csrf-header="${_csrf.headerName}">
+
             <div class="nr-title">Hizmet Talebi Oluştur</div>
             <div class="nr-sub">İhtiyacınızı anlatın, size uygun profesyoneller teklif sunsun.</div>
 

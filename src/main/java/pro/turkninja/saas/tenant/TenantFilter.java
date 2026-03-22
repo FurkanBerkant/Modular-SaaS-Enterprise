@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 import pro.turkninja.saas.security.AppUser;
 import java.io.IOException;
 
-@Component
 public class TenantFilter implements Filter {
 
     @Override

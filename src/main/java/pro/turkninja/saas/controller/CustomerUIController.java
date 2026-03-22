@@ -1,4 +1,4 @@
-package pro.turkninja.saas.appointment;
+package pro.turkninja.saas.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

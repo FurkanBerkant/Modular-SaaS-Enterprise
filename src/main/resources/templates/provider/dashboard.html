@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="tr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard — Randevio</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div layout:fragment="content">
+    <style>
+        .dash-wrap { padding: 32px; min-height: calc(100vh - 60px); }
+
+        /* Üst başlık */
+        .dash-header { margin-bottom: 32px; }
+        .dash-title { font-weight: 800; font-size: 1.5rem; color: white; letter-spacing: -0.02em; }
+        .dash-sub { font-size: 0.83rem; color: rgba(255,255,255,0.35); margin-top: 4px; }
+
+        /* Stats grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
+
+        .stat-card {
+            background: rgba(22,27,39,0.95);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px; padding: 24px;
+            position: relative; overflow: hidden;
+        }
+        .stat-card::before {
+            content: ''; position: absolute;
+            left: 0; top: 0; bottom: 0; width: 3px;
+            border-radius: 14px 0 0 14px;
+        }
+        .stat-card.green::before  { background: #00E5A0; }
+        .stat-card.blue::before   { background: #3b82f6; }
+        .stat-card.yellow::before { background: #fbbf24; }
+        .stat-card.red::before    { background: #f87171; }
+
+        .stat-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: rgba(255,255,255,0.35); margin-bottom: 10px; }
+        .stat-value { font-weight: 800; font-size: 2rem; color: white; letter-spacing: -0.02em; line-height: 1; }
+        .stat-value.green  { color: #00E5A0; }
+        .stat-value.blue   { color: #60a5fa; }
+        .stat-value.yellow { color: #fbbf24; }
+        .stat-desc { font-size: 0.75rem; color: rgba(255,255,255,0.3); margin-top: 8px; }
+
+        /* Loading */
+        .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px; gap: 16px; }
+        .spinner { width: 36px; height: 36px; border: 3px solid rgba(0,229,160,0.1); border-top-color: #00E5A0; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 0.85rem; color: rgba(255,255,255,0.3); }
+
+        /* Chart bölümü */
+        .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 8px; }
+        .chart-card { background: rgba(22,27,39,0.95); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 28px; }
+        .chart-title { font-weight: 700; font-size: 0.95rem; color: white; margin-bottom: 20px; }
+        .chart-wrap { position: relative; max-height: 260px; display: flex; align-items: center; justify-content: center; }
+
+        /* Pending list */
+        .pending-list { display: flex; flex-direction: column; gap: 10px; }
+        .pending-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; }
+        .pending-time { font-weight: 800; font-size: 0.95rem; color: #00E5A0; width: 52px; flex-shrink: 0; font-family: monospace; }
+        .pending-info { flex: 1; }
+        .pending-name { font-size: 0.87rem; font-weight: 600; color: white; }
+        .pending-service { font-size: 0.75rem; color: rgba(255,255,255,0.35); margin-top: 2px; }
+        .badge-pending { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2); color: #fbbf24; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; padding: 3px 8px; border-radius: 5px; }
+
+        .empty-list { text-align: center; padding: 32px; color: rgba(255,255,255,0.2); font-size: 0.83rem; }
+
+        @media (max-width: 768px) {
+            .bottom-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+
+    <div class="dash-wrap"
+         x-data="{
+        stats: null,
+        pending: [],
+        loading: true,
+
+        async init() {
+            try {
+                const res = await fetch('/api/dashboard/stats');
+                const data = await res.json();
+                this.stats = data;
+                this.loading = false;
+                this.$nextTick(() => this.drawChart(data));
+            } catch(e) {
+                console.error('Dashboard yüklenemedi:', e);
+                this.loading = false;
+            }
+        },
+
+        drawChart(data) {
+            const ctx = document.getElementById('randevuGrafigi');
+            if (!ctx) return;
+
+            const total = data.totalAppointments || 1;
+            const pending = data.pendingAppointments || 0;
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tamamlanan', 'İptal Edilen', 'Bekleyen'],
+                    datasets: [{
+                        data: [
+                            data.completedAppointments,
+                            data.cancelledAppointments,
+                            pending
+                        ],
+                        backgroundColor: ['#00E5A0', '#f87171', '#fbbf24'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '72%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: 'rgba(255,255,255,0.5)',
+                                font: { size: 12, family: 'Plus Jakarta Sans' },
+                                padding: 16,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        },
+
+        completionRate() {
+            if (!this.stats || this.stats.totalAppointments === 0) return 0;
+            return Math.round((this.stats.completedAppointments / this.stats.totalAppointments) * 100);
+        }
+     }">
+
+        <div class="dash-header">
+            <div class="dash-title">İşletme Özeti</div>
+            <div class="dash-sub">Randevu istatistikleri ve güncel durum</div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-state" x-show="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">Veriler yükleniyor...</div>
+        </div>
+
+        <!-- İçerik -->
+        <div x-show="!loading" x-transition style="display:none">
+
+            <!-- Stat kartları -->
+            <div class="stats-grid">
+                <div class="stat-card green">
+                    <div class="stat-label">Beklenen Ciro</div>
+                    <div class="stat-value green" x-text="stats ? stats.estimatedRevenue.toLocaleString('tr-TR', {maximumFractionDigits:0}) + ' ₺' : '—'"></div>
+                    <div class="stat-desc">Bu ayki onaylı randevulardan</div>
+                </div>
+
+                <div class="stat-card blue">
+                    <div class="stat-label">Toplam Randevu</div>
+                    <div class="stat-value blue" x-text="stats ? stats.totalAppointments : '—'"></div>
+                    <div class="stat-desc">Tüm zamanlar</div>
+                </div>
+
+                <div class="stat-card green">
+                    <div class="stat-label">Tamamlanma Oranı</div>
+                    <div class="stat-value green" x-text="completionRate() + '%'"></div>
+                    <div class="stat-desc" x-text="stats ? stats.completedAppointments + ' randevu tamamlandı' : ''"></div>
+                </div>
+
+                <div class="stat-card yellow">
+                    <div class="stat-label">Bekleyen Onay</div>
+                    <div class="stat-value yellow" x-text="stats ? stats.pendingAppointments : '—'"></div>
+                    <div class="stat-desc">Onay bekliyor</div>
+                </div>
+            </div>
+
+            <!-- Alt bölüm: grafik + bekleyenler -->
+            <div class="bottom-grid">
+
+                <!-- Grafik -->
+                <div class="chart-card">
+                    <div class="chart-title">Randevu Dağılımı</div>
+                    <div class="chart-wrap">
+                        <canvas id="randevuGrafigi" style="max-height:240px;"></canvas>
+                    </div>
+                </div>
+
+                <!-- Bekleyen randevular listesi -->
+                <div class="chart-card">
+                    <div class="chart-title">Onay Bekleyenler</div>
+
+                    <div class="pending-list" th:if="${pendingAppointments != null and !#lists.isEmpty(pendingAppointments)}">
+                        <div class="pending-item" th:each="appt : ${pendingAppointments}">
+                            <div class="pending-time" th:text="${appt.time}">09:00</div>
+                            <div class="pending-info">
+                                <div class="pending-name" th:text="'Müşteri: ' + ${appt.customerId}">Müşteri</div>
+                                <div class="pending-service" th:text="${appt.date}">Tarih</div>
+                            </div>
+                            <span class="badge-pending">Bekliyor</span>
+                        </div>
+                    </div>
+
+                    <div class="empty-list" th:if="${pendingAppointments == null or #lists.isEmpty(pendingAppointments)}">
+                        <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 8px; opacity:0.3"><path d="M20 6L9 17l-5-5"/></svg>
+                        <p>Bekleyen randevu yok 🎉</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

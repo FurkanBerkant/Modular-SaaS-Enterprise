@@ -13,15 +13,12 @@ public class ServiceRequest {
 
     @Id
     private String id;
-
     private String customerId;
-
     private String category;
     private String title;
     private String description;
     private BigDecimal maxBudget;
     private LocalDate deadline;
-
     private RequestStatus status = RequestStatus.OPEN;
     private Instant createdAt = Instant.now();
 

@@ -20,7 +20,7 @@ public class BookingService {
             newAppointment.setCustomerId(customerId);
             newAppointment.setDate(date);
             newAppointment.setTime(time);
-            newAppointment.setStatus(AppointmentStatus.PENDING); // Onay bekliyor
+            newAppointment.setStatus(AppointmentStatus.PENDING);
 
             repository.save(newAppointment);
             return "Randevu talebiniz başarıyla alındı. İşletmenin onayı bekleniyor.";

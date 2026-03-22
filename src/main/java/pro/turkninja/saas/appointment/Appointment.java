@@ -8,11 +8,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "appointments")
 @Data
 public class Appointment {
-
     @Id
     private String id;
     private String providerId;
     private String customerId;
+    private String employeeId;
+    private String serviceId;
     private TimeSlot timeSlot;
     private String date;
     private String time;
@@ -33,5 +34,12 @@ public class Appointment {
             throw new IllegalStateException("Sadece BEKLEYEN randevular reddedilebilir! Şu anki durum: " + this.status);
         }
         this.status = AppointmentStatus.REJECTED;
+    }
+
+    public void complete() {
+        if (this.status != AppointmentStatus.APPROVED) {
+            throw new IllegalStateException("Sadece ONAYLANMIŞ randevular tamamlanabilir! Şu anki durum: " + this.status);
+        }
+        this.status = AppointmentStatus.COMPLETED;
     }
 }

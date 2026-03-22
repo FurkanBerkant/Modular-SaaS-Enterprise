@@ -20,14 +20,12 @@ import java.util.List;
         private final ProviderRepository providerRepository;
 
         @GetMapping("/active-requests")
-        @PreAuthorize("hasRole('PROVIDER')") // Sadece işletmeler girebilir!
+        @PreAuthorize("hasRole('PROVIDER')")
         public List<ServiceRequest> getRadarRequests() {
 
-            // 1. Giren işletmenin ID'sini TenantContext'ten alıyoruz
             String providerId = TenantContext.getTenantId();
             Provider provider = providerRepository.findById(providerId).orElseThrow();
 
-            // 2. İşletmenin kendi kategorisindeki (Örn: SPOR_HOCASI) AÇIK ilanları bulup döndürüyoruz
             return requestRepository.findByCategoryAndStatusOrderByCreatedAtDesc(
                     provider.getCategory(),
                     RequestStatus.OPEN

@@ -18,10 +18,13 @@ public class Provider {
 
     private String businessName;
     private String category;
-    private boolean isActive;
+    private boolean active;
     private Map<String, Object> customAttributes = new HashMap<>();
-    private Storefront storefront = new Storefront("Merhaba, hizmetlerime hoş geldiniz.", "#3b82f6",
-            null, null);
+    private Storefront storefront = new Storefront(
+            "Merhaba, hizmetlerime hoş geldiniz.",
+            "#3b82f6",
+            null,
+            null);
     private List<ServiceItem> services = new ArrayList<>();
     private List<DailySchedule> weeklySchedule = new ArrayList<>();
     private Instant createdAt = Instant.now();
