@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="tr"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <meta charset="UTF-8">
+    <title>Radar — Randevio</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <style>
+        .radar-page { padding: 32px; min-height: calc(100vh - 60px); }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 36px; }
+        .page-title { font-weight: 800; font-size: 1.6rem; color: white; letter-spacing: -0.02em; }
+        .page-sub { font-size: 0.85rem; color: rgba(255,255,255,0.35); margin-top: 4px; }
+        .count-badge { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2); color: #00E5A0; font-weight: 700; font-size: 0.85rem; padding: 8px 18px; border-radius: 100px; display: flex; align-items: center; gap: 8px; }
+        .pulse-dot { width: 8px; height: 8px; background: #00E5A0; border-radius: 50%; animation: pulse 1.5s ease infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+        .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; gap: 16px; }
+        .spinner { width: 36px; height: 36px; border: 3px solid rgba(0,229,160,0.1); border-top-color: #00E5A0; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 0.85rem; color: rgba(255,255,255,0.3); }
+        .ilan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+        .ilan-card { background: rgba(22, 27, 39, 0.95); border: 1px solid rgba(255,255,255,0.06); border-top: 3px solid #00E5A0; border-radius: 14px; padding: 24px; transition: all 0.25s; display: flex; flex-direction: column; }
+        .ilan-card:hover { border-color: rgba(0,229,160,0.3); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+        .ilan-title { font-weight: 700; font-size: 1rem; color: white; line-height: 1.3; margin-bottom: 10px; }
+        .ilan-desc { font-size: 0.82rem; color: rgba(255,255,255,0.4); line-height: 1.65; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+        .ilan-divider { height: 1px; background: rgba(255,255,255,0.05); margin: 16px 0; }
+        .ilan-meta { display: flex; justify-content: space-between; align-items: flex-end; }
+        .meta-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.25); margin-bottom: 4px; }
+        .budget-val { font-weight: 800; font-size: 1.15rem; color: #00E5A0; }
+        .date-val { font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.4); text-align: right; }
+        .btn-teklif { width: 100%; margin-top: 16px; background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.2); color: #00E5A0; font-weight: 700; font-size: 0.85rem; padding: 10px; border-radius: 9px; cursor: pointer; transition: all 0.2s; }
+        .btn-teklif:hover { background: #00E5A0; color: #0a0a0a; box-shadow: 0 6px 20px rgba(0,229,160,0.25); }
+        .empty-card { grid-column: 1 / -1; background: rgba(22,27,39,0.5); border: 2px dashed rgba(255,255,255,0.06); border-radius: 14px; padding: 80px 20px; text-align: center; color: rgba(255,255,255,0.2); font-size: 0.9rem; }
+    </style>
+
+    <div class="radar-page"
+         x-data="{ ilanlar: [], loading: true }"
+         x-init="
+            fetch('/api/radar/active-requests')
+                .then(res => res.json())
+                .then(data => { ilanlar = data; loading = false; })
+                .catch(() => { loading = false; })
+         ">
+
+        <div class="page-header">
+            <div>
+                <div class="page-title">⚡ Radar</div>
+                <div class="page-sub">Bölgenizdeki aktif iş fırsatları</div>
+            </div>
+            <div class="count-badge" x-show="!loading">
+                <div class="pulse-dot"></div>
+                <span x-text="ilanlar.length"></span> ilan aktif
+            </div>
+        </div>
+
+        <div x-show="loading" class="loading-state">
+            <div class="spinner"></div>
+            <div class="loading-text">İlanlar taranıyor...</div>
+        </div>
+
+        <div class="ilan-grid" x-show="!loading" x-transition>
+            <template x-if="ilanlar.length === 0">
+                <div class="empty-card">
+                    <p>Şu an bölgenizde aktif ilan bulunmuyor.</p>
+                    <p style="margin-top:6px; font-size:0.78rem; opacity:0.6;">Yeni ilanlar geldiğinde burada görünecek.</p>
+                </div>
+            </template>
+
+            <template x-for="ilan in ilanlar" :key="ilan.id">
+                <div class="ilan-card">
+                    <div class="ilan-title" x-text="ilan.title"></div>
+                    <div class="ilan-desc" x-text="ilan.description"></div>
+                    <div class="ilan-divider"></div>
+                    <div class="ilan-meta">
+                        <div>
+                            <div class="meta-label">Maks. Bütçe</div>
+                            <div class="budget-val" x-text="new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(ilan.maxBudget)"></div>
+                        </div>
+                        <div>
+                            <div class="meta-label" style="text-align:right;">Yayınlanma</div>
+                            <div class="date-val" x-text="new Date(ilan.createdAt).toLocaleDateString('tr-TR')"></div>
+                        </div>
+                    </div>
+                    <button class="btn-teklif">Teklif Hazırla →</button>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+</body>
+</html>

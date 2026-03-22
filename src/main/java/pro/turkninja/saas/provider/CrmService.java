@@ -2,8 +2,8 @@ package pro.turkninja.saas.provider;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import pro.turkninja.saas.appointment.AppointmentRepository;
-import pro.turkninja.saas.appointment.Appointment;
+import pro.turkninja.saas.appointment.AppointmentQueryService;
+import pro.turkninja.saas.appointment.AppointmentSummary;
 import pro.turkninja.saas.tenant.TenantContext;
 
 import java.util.List;
@@ -13,12 +13,13 @@ import java.util.List;
 public class CrmService {
 
     private final ClientRecordRepository recordRepository;
-    private final AppointmentRepository appointmentRepository;
+    private final AppointmentQueryService appointmentQueryService;
 
     public CustomerCrmProfile getCustomerProfile(String customerId) {
         String providerId = TenantContext.getTenantId();
 
-        ClientRecord record = recordRepository.findByProviderIdAndCustomerId(providerId, customerId)
+        ClientRecord record = recordRepository
+                .findByProviderIdAndCustomerId(providerId, customerId)
                 .orElseGet(() -> {
                     ClientRecord newRecord = new ClientRecord();
                     newRecord.setProviderId(providerId);
@@ -26,8 +27,8 @@ public class CrmService {
                     return recordRepository.save(newRecord);
                 });
 
-        List<Appointment> history = appointmentRepository
-                .findByProviderIdAndCustomerIdOrderByDateDesc(providerId, customerId);
+        List<AppointmentSummary> history =
+                appointmentQueryService.findByProviderAndCustomer(providerId, customerId);
 
         return new CustomerCrmProfile(record, history);
     }
@@ -36,7 +37,8 @@ public class CrmService {
         String providerId = TenantContext.getTenantId();
         ClientRecord record = recordRepository
                 .findByProviderIdAndCustomerId(providerId, customerId)
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Müşteri kaydı bulunamadı: " + customerId));
 
         record.addNote(noteContent);
         recordRepository.save(record);

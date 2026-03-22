@@ -1,6 +1,6 @@
-package pro.turkninja.saas.appointment;
+package pro.turkninja.saas.provider;
 
-public record DashboardStats(
+public record ProviderDashboardStats(
         int totalAppointments,
         int completedAppointments,
         int cancelledAppointments,

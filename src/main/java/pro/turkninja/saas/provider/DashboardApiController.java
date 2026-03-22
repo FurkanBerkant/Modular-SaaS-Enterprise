@@ -5,56 +5,56 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pro.turkninja.saas.appointment.AppointmentRepository;
+import pro.turkninja.saas.appointment.AppointmentQueryService;
 import pro.turkninja.saas.appointment.AppointmentStatus;
-import pro.turkninja.saas.appointment.DashboardStats;
-import pro.turkninja.saas.appointment.StatusCountDTO;
+import pro.turkninja.saas.appointment.AppointmentSummary;
 import pro.turkninja.saas.tenant.TenantContext;
 
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/dashboard")
 @RequiredArgsConstructor
 public class DashboardApiController {
 
-    private final AppointmentRepository appointmentRepository;
+    private final AppointmentQueryService appointmentQueryService;
     private final ProviderRepository providerRepository;
 
     @GetMapping("/stats")
     @PreAuthorize("hasRole('PROVIDER')")
-    public DashboardStats getProviderStats() {
+    public ProviderDashboardStats getProviderStats() {
         String providerId = TenantContext.getTenantId();
 
-        // Tüm randevuları status'a göre grupla
-        List<StatusCountDTO> counts = appointmentRepository.countAppointmentsByStatus(providerId);
+        Map<AppointmentStatus, Integer> counts =
+                appointmentQueryService.countByStatus(providerId);
 
-        int total = 0, completed = 0, cancelled = 0, pending = 0;
+        int total     = counts.values().stream().mapToInt(Integer::intValue).sum();
+        int completed = counts.getOrDefault(AppointmentStatus.COMPLETED, 0);
+        int cancelled = counts.getOrDefault(AppointmentStatus.REJECTED,  0);
+        int pending   = counts.getOrDefault(AppointmentStatus.PENDING,   0);
 
-        for (StatusCountDTO dto : counts) {
-            total += dto.count();
-            switch (dto.id()) {
-                case "COMPLETED" -> completed = dto.count();
-                case "REJECTED"  -> cancelled = dto.count();
-                case "PENDING"   -> pending   = dto.count();
-            }
-        }
-
-        // Bu ayki onaylı randevulardan beklenen ciro
-        String thisMonth = YearMonth.now().toString(); // "2026-03"
+        String thisMonth = YearMonth.now().toString();
         Provider provider = providerRepository.findById(providerId).orElseThrow();
 
-        double revenue = appointmentRepository
-                .findByProviderIdAndStatusAndDateStartingWith(providerId, AppointmentStatus.APPROVED, thisMonth)
+        double revenue = appointmentQueryService
+                .findByProviderStatusAndMonth(providerId, AppointmentStatus.APPROVED, thisMonth)
                 .stream()
                 .mapToDouble(appt -> provider.getServices().stream()
-                        .filter(s -> s.id().equals(appt.getServiceId()))
+                        .filter(s -> s.id().equals(appt.serviceId()))
                         .mapToDouble(s -> s.price().doubleValue())
-                        .findFirst()
-                        .orElse(0.0))
+                        .findFirst().orElse(0.0))
                 .sum();
 
-        return new DashboardStats(total, completed, cancelled, pending, revenue);
+        return new ProviderDashboardStats(total, completed, cancelled, pending, revenue);
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('PROVIDER')")
+    public List<AppointmentSummary> getPendingAppointments() {
+        String providerId = TenantContext.getTenantId();
+        return appointmentQueryService.findByProviderAndStatus(
+                providerId, AppointmentStatus.PENDING);
     }
 }

@@ -1,34 +1,43 @@
 package pro.turkninja.saas.bidding;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pro.turkninja.saas.provider.Provider;
-import pro.turkninja.saas.provider.ProviderRepository;
+import pro.turkninja.saas.provider.ProviderCategoryQuery;
 import pro.turkninja.saas.tenant.TenantContext;
 
 import java.util.List;
 
-    @RestController
-    @RequestMapping("/api/radar")
-    @RequiredArgsConstructor
-    public class RadarApiController {
+/**
+ * Radar API — provider'ın kategorisine uygun açık ilanları döner.
+ *
+ * provider modülüne bağımlılık ProviderCategoryQuery (public API) üzerinden —
+ * ProviderRepository'ye doğrudan erişim YOK.
+ */
+@RestController
+@RequestMapping("/api/radar")
+@RequiredArgsConstructor
+public class RadarApiController {
 
-        private final ServiceRequestRepository requestRepository;
-        private final ProviderRepository providerRepository;
+    private final ServiceRequestRepository requestRepository;
+    private final ProviderCategoryQuery providerCategoryQuery;
 
-        @GetMapping("/active-requests")
-        @PreAuthorize("hasRole('PROVIDER')")
-        public List<ServiceRequest> getRadarRequests() {
+    @GetMapping("/active-requests")
+    @PreAuthorize("hasRole('PROVIDER')")
+    public ResponseEntity<?> getRadarRequests() {
+        String providerId = TenantContext.getTenantId();
 
-            String providerId = TenantContext.getTenantId();
-            Provider provider = providerRepository.findById(providerId).orElseThrow();
+        String category = providerCategoryQuery
+                .findCategoryByProviderId(providerId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Provider profili bulunamadı. Önce onboarding tamamlanmalı."));
 
-            return requestRepository.findByCategoryAndStatusOrderByCreatedAtDesc(
-                    provider.getCategory(),
-                    RequestStatus.OPEN
-            );
-        }
+        List<ServiceRequest> requests = requestRepository
+                .findByCategoryAndStatusOrderByCreatedAtDesc(category, RequestStatus.OPEN);
+
+        return ResponseEntity.ok(requests);
     }
+}

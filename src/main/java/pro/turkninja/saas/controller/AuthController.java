@@ -57,8 +57,8 @@ public class AuthController {
         newUser.setEmail(email);
         newUser.setPassword(passwordEncoder.encode(password));
         newUser.setRole(UserRole.CUSTOMER);
-
         userRepository.save(newUser);
-        return "redirect:/login?registered=true";
+
+        return "redirect:/login?registered=true&onboarding=true";
     }
 }

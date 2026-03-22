@@ -12,10 +12,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import pro.turkninja.saas.tenant.TenantFilter;
 
 @EnableWebSecurity
@@ -25,14 +25,32 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(auth -> auth
+        http
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-                        .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                        .requestMatchers(
+                                "/", "/login", "/register",
+                                "/css/**", "/js/**", "/images/**", "/uploads/**", "/webjars/**"
+                        ).permitAll()
+
+                        // Provider sayfaları
                         .requestMatchers("/dashboard", "/provider/**").hasRole("PROVIDER")
-                        .requestMatchers("/employee/**").hasRole("EMPLOYEE")
-                        .requestMatchers("/booking", "/request").hasRole("CUSTOMER")
+
+                        // Employee sayfaları
+                        .requestMatchers("/employee/**").hasAnyRole("EMPLOYEE", "PROVIDER")
+
+                        // Customer sayfaları
+                        .requestMatchers("/booking", "/request").hasAnyRole("CUSTOMER", "PROVIDER")
+
+                        // Onboarding: giriş yapmış herkes erişebilir (rol CUSTOMER → PROVIDER geçişi burada)
+                        .requestMatchers("/provider/onboarding").authenticated()
+
+                        // API'ler: authenticated, method-level @PreAuthorize ile korunuyor
                         .requestMatchers("/api/**").authenticated()
+
+                        // Admin
                         .requestMatchers("/admin/**").hasRole("SUPER_ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -48,9 +66,9 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/")
                         .permitAll()
                 )
+                // CSRF aktif — HTML form'lar th:action ile otomatik token alır,
+                // fetch istekleri th:data-csrf-token ile header'a ekler.
                 .addFilterAfter(new TenantFilter(), UsernamePasswordAuthenticationFilter.class);
-
-
 
         return http.build();
     }

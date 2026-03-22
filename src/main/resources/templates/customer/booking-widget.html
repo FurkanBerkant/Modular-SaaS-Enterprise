@@ -14,37 +14,30 @@
         .bw-glow { position: absolute; width: 500px; height: 400px; background: radial-gradient(ellipse, rgba(0,229,160,0.06) 0%, transparent 70%); top: 0; left: 50%; transform: translateX(-50%); pointer-events: none; }
         .bw-card { width: 100%; max-width: 520px; background: rgba(22,27,39,0.95); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 44px; box-shadow: 0 40px 80px rgba(0,0,0,0.4); position: relative; z-index: 1; animation: fadeUp 0.4s ease both; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-
         .bw-title { font-weight: 800; font-size: 1.4rem; color: white; letter-spacing: -0.02em; margin-bottom: 4px; }
         .bw-sub { font-size: 0.83rem; color: rgba(255,255,255,0.38); margin-bottom: 32px; }
-
         .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
         .step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.12); transition: all 0.3s; }
         .step-dot.active { background: #00E5A0; box-shadow: 0 0 8px rgba(0,229,160,0.5); }
-        .step-dot.done { background: rgba(0,229,160,0.4); }
-
         .field-label { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: rgba(255,255,255,0.38); margin-bottom: 8px; }
         .field-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 14px; color: white; font-size: 0.875rem; outline: none; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
         .field-input:focus { border-color: rgba(0,229,160,0.5); background: rgba(0,229,160,0.03); box-shadow: 0 0 0 3px rgba(0,229,160,0.08); }
         .field-group { margin-bottom: 20px; }
         select.field-input option { background: #161b27; }
-
         .slots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 4px; }
         .slot-btn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 6px; font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.6); cursor: pointer; transition: all 0.15s; font-family: 'Plus Jakarta Sans', sans-serif; text-align: center; }
         .slot-btn:hover { border-color: rgba(0,229,160,0.3); color: #00E5A0; background: rgba(0,229,160,0.05); }
         .slot-btn.selected { background: rgba(0,229,160,0.12); border-color: rgba(0,229,160,0.5); color: #00E5A0; font-weight: 700; }
-
         .no-slots { font-size: 0.83rem; color: rgba(255,100,100,0.7); font-style: italic; padding: 8px 0; }
-
         .spinner { width: 20px; height: 20px; border: 2px solid rgba(0,229,160,0.2); border-top-color: #00E5A0; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 20px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
         .btn-confirm { width: 100%; background: #00E5A0; color: #0a0a0a; font-weight: 700; font-size: 0.9rem; padding: 14px; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; margin-top: 8px; }
         .btn-confirm:hover:not(:disabled) { background: #00ffb3; box-shadow: 0 8px 25px rgba(0,229,160,0.3); }
         .btn-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+        .no-provider { text-align: center; padding: 48px 0; color: rgba(255,255,255,0.4); }
     </style>
 
-    <script th:inline="javascript">
+    <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('bookingWidget', () => ({
                 providerId:  '',
@@ -60,7 +53,6 @@
                 errorMsg: '',
 
                 init() {
-                    // providerId ve CSRF bilgilerini data-attribute'lardan güvenli şekilde al
                     this.providerId  = this.$el.dataset.providerId  || '';
                     this.csrfToken   = this.$el.dataset.csrfToken   || '';
                     this.csrfHeader  = this.$el.dataset.csrfHeader  || 'X-CSRF-TOKEN';
@@ -72,7 +64,9 @@
                     this.availableSlots = [];
                     this.selectedTime = '';
                     try {
-                        const res = await fetch(`/api/appointments/available-slots?providerId=${this.providerId}&serviceId=${this.selectedService}&date=${this.selectedDate}`);
+                        const res = await fetch(
+                            `/api/appointments/available-slots?providerId=${this.providerId}&serviceId=${this.selectedService}&date=${this.selectedDate}`
+                        );
                         this.availableSlots = await res.json();
                     } catch (e) {
                         console.error(e);
@@ -121,18 +115,25 @@
 
     <div class="bw-wrap">
         <div class="bw-glow"></div>
-        <!--
-            th:data-provider-id : Thymeleaf ile güvenli aktarım (tırnak çakışması yok)
-            th:data-csrf-token  : Spring Security _csrf.token buraya yazılıyor
-            th:data-csrf-header : Genellikle "X-CSRF-TOKEN", Alpine init()'te okunuyor
-        -->
+
+        <!-- Provider bulunamadı durumu -->
+        <div class="bw-card" th:if="${provider == null}">
+            <div class="no-provider">
+                <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 16px; opacity:0.3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <p>Randevu alınacak işletme bulunamadı.</p>
+                <p style="font-size:0.78rem; margin-top:8px; opacity:0.6;">Lütfen işletme linki üzerinden tekrar deneyin.</p>
+            </div>
+        </div>
+
+        <!-- Normal booking widget -->
         <div class="bw-card"
+             th:if="${provider != null}"
              x-data="bookingWidget"
-             th:data-provider-id="${provider != null ? provider.id : ''}"
+             th:data-provider-id="${provider.id}"
              th:data-csrf-token="${_csrf.token}"
              th:data-csrf-header="${_csrf.headerName}">
 
-            <div class="bw-title">Randevu Al</div>
+            <div class="bw-title" th:text="${provider.businessName}">Randevu Al</div>
             <div class="bw-sub">Hizmet ve tarih seçerek uygun saati belirleyin.</div>
 
             <div class="step-indicator">
@@ -145,8 +146,11 @@
                 <label class="field-label">1. Hizmet Seçin</label>
                 <select x-model="selectedService" @change="fetchSlots()" class="field-input">
                     <option value="" disabled selected>Hizmet seçin</option>
-                    <option value="srv-1">Saç Kesimi — 30 dk · 300 ₺</option>
-                    <option value="srv-2">Cilt Bakımı — 45 dk · 500 ₺</option>
+                    <!-- Gerçek hizmetler provider.services'tan geliyor -->
+                    <option th:each="service : ${provider.services}"
+                            th:value="${service.id}"
+                            th:text="${service.name + ' — ' + service.durationMinutes + ' dk · ' + #numbers.formatDecimal(service.price,1,'POINT',0,'COMMA') + ' ₺'}">
+                    </option>
                 </select>
             </div>
 

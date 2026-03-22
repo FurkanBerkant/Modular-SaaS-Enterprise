@@ -1,115 +1,147 @@
 <!DOCTYPE html>
 <html lang="tr"
       xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
       data-theme="night"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Randevio</title>
-
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" th:href="@{/css/output.css}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
     <style>
-        :root {
-            --accent: #00E5A0;
-            --accent-dim: rgba(0,229,160,0.1);
-            --surface: #0f1117;
-            --surface2: #161b27;
-            --border: rgba(255,255,255,0.06);
-        }
-        *, *::before, *::after { box-sizing: border-box; }
-        body, html {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: var(--surface);
-            color: white;
-            margin: 0; padding: 0;
-        }
-
-        .navbar-main {
-            background: rgba(15,17,23,0.88);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
-            position: sticky; top: 0; z-index: 100;
-            padding: 0 32px;
-            height: 60px;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .nav-logo {
-            font-weight: 800; font-size: 1.1rem;
-            letter-spacing: -0.02em; color: white;
-            text-decoration: none;
-        }
-        .nav-logo span { color: var(--accent); }
-
-        .nav-dropdown {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        .btn-primary {
-            background: var(--accent); color: #0a0a0a;
-            font-weight: 700; border: none; border-radius: 9px;
-            padding: 9px 18px; cursor: pointer; transition: all 0.2s;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 0.85rem; text-decoration: none;
-            display: inline-flex; align-items: center; justify-content: center;
-        }
-        .btn-primary:hover { background: #00ffb3; box-shadow: 0 6px 20px rgba(0,229,160,0.3); }
-        .btn-ghost-nav {
-            background: transparent; color: rgba(255,255,255,0.6);
-            border: 1px solid var(--border); border-radius: 9px;
-            padding: 9px 18px; cursor: pointer; transition: all 0.2s;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 0.85rem; text-decoration: none;
-            display: inline-flex; align-items: center;
-        }
-        .btn-ghost-nav:hover { background: rgba(255,255,255,0.05); color: white; }
-
-        main { animation: fadeUp 0.35s ease both; }
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
+        :root { --accent:#00E5A0; --accent-dim:rgba(0,229,160,0.1); --surface:#0f1117; --surface2:#161b27; --border:rgba(255,255,255,0.06); }
+        *,*::before,*::after{box-sizing:border-box}
+        body,html{font-family:'Plus Jakarta Sans',sans-serif;background:var(--surface);color:white;margin:0;padding:0}
+        .navbar-main{background:rgba(15,17,23,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between}
+        .nav-logo{font-weight:800;font-size:1.1rem;letter-spacing:-0.02em;color:white;text-decoration:none}
+        .nav-logo span{color:var(--accent)}
+        .nav-right{display:flex;align-items:center;gap:10px}
+        .nav-user-btn{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:7px 14px;cursor:pointer;transition:all 0.2s;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.83rem;color:rgba(255,255,255,0.7)}
+        .nav-user-btn:hover{background:rgba(255,255,255,0.08);color:white}
+        .nav-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#0a0a0a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.72rem;flex-shrink:0}
+        .nav-role-badge{font-size:0.65rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px}
+        .role-provider{background:rgba(0,229,160,0.1);color:#00E5A0}
+        .role-customer{background:rgba(59,130,246,0.1);color:#60a5fa}
+        .role-employee{background:rgba(251,191,36,0.1);color:#fbbf24}
+        .user-dropdown{position:absolute;right:0;top:calc(100% + 8px);background:var(--surface2);border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,0.5);width:220px;padding:8px;display:none}
+        .dropdown-header{padding:10px 12px 12px;border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:6px}
+        .dropdown-email{font-size:0.78rem;color:rgba(255,255,255,0.4);word-break:break-all;margin-top:4px}
+        .dropdown-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:0.83rem;color:rgba(255,255,255,0.65);text-decoration:none;transition:all 0.15s;cursor:pointer;width:100%;background:none;border:none;font-family:'Plus Jakarta Sans',sans-serif;text-align:left}
+        .dropdown-item:hover{background:rgba(255,255,255,0.05);color:white}
+        .dropdown-item.accent{color:#00E5A0}
+        .dropdown-item.accent:hover{background:rgba(0,229,160,0.08)}
+        .dropdown-item.danger{color:#ff6b6b}
+        .dropdown-item.danger:hover{background:rgba(255,80,80,0.08)}
+        .dropdown-divider{height:1px;background:rgba(255,255,255,0.05);margin:6px 0}
+        .btn-primary{background:var(--accent);color:#0a0a0a;font-weight:700;border:none;border-radius:9px;padding:9px 18px;cursor:pointer;transition:all 0.2s;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+        .btn-primary:hover{background:#00ffb3;box-shadow:0 6px 20px rgba(0,229,160,0.3)}
+        .btn-ghost-nav{background:transparent;color:rgba(255,255,255,0.6);border:1px solid var(--border);border-radius:9px;padding:9px 18px;cursor:pointer;transition:all 0.2s;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center}
+        .btn-ghost-nav:hover{background:rgba(255,255,255,0.05);color:white}
+        main{animation:fadeUp 0.35s ease both}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     </style>
 </head>
 <body>
-
 <header class="navbar-main">
-    <a th:href="@{/}" class="nav-logo">
-        Randevio<span>.</span>
-    </a>
+    <a th:href="@{/}" class="nav-logo">Randevio<span>.</span></a>
+    <div class="nav-right">
 
-    <div x-data="{ open: false }" class="relative">
-        <button @click="open = !open"
-                style="background:transparent; border:none; cursor:pointer; padding:8px; color:rgba(255,255,255,0.6);">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                 style="width:20px;height:20px;" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-        </button>
-
-        <div x-show="open" @click.away="open = false"
-             x-transition:enter="transition ease-out duration-150"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             class="nav-dropdown"
-             style="position:absolute; right:0; top:calc(100% + 8px); width:200px; padding:8px; display:none;">
-            <a href="/login" class="btn-ghost-nav" style="width:100%; margin-bottom:6px;">Giriş Yap</a>
-            <a href="/register" class="btn-primary" style="width:100%;">İşletme Kaydı</a>
+        <!-- Anonymous -->
+        <div sec:authorize="isAnonymous()" x-data="{ open: false }" class="relative">
+            <button @click="open = !open" class="nav-user-btn" style="border:none; background:transparent;">
+                <svg fill="none" viewBox="0 0 24 24" style="width:18px;height:18px;" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="user-dropdown" style="display:none;">
+                <a href="/login" class="dropdown-item">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+                    Giriş Yap
+                </a>
+                <a href="/register" class="dropdown-item accent">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                    İşletme Kaydı
+                </a>
+            </div>
         </div>
+
+        <!-- PROVIDER -->
+        <div sec:authorize="hasRole('PROVIDER')" x-data="{ open: false }" class="relative">
+            <button @click="open = !open" class="nav-user-btn">
+                <div class="nav-avatar" th:text="${#authentication != null and #authentication.principal != 'anonymousUser' ? #strings.substring(#authentication.name,0,1).toUpperCase() : '?'}">P</div>
+                <span th:text="${#authentication != null ? #strings.abbreviate(#authentication.name,22) : ''}">mail</span>
+                <span class="nav-role-badge role-provider">İşletme</span>
+            </button>
+            <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="user-dropdown" style="display:none;">
+                <div class="dropdown-header">
+                    <span class="nav-role-badge role-provider">İşletme Sahibi</span>
+                    <div class="dropdown-email" th:text="${#authentication != null ? #authentication.name : ''}"></div>
+                </div>
+                <a href="/dashboard" class="dropdown-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Dashboard</a>
+                <a href="/provider/catalog" class="dropdown-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Hizmet Kataloğu</a>
+                <a href="/provider/radar" class="dropdown-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Radar</a>
+                <a href="/provider/storefront-settings" class="dropdown-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg> Vitrin Ayarları</a>
+                <div class="dropdown-divider"></div>
+                <form th:action="@{/logout}" method="POST">
+                    <button type="submit" class="dropdown-item danger"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg> Çıkış Yap</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- CUSTOMER -->
+        <div sec:authorize="hasRole('CUSTOMER')" x-data="{ open: false }" class="relative">
+            <button @click="open = !open" class="nav-user-btn">
+                <div class="nav-avatar" th:text="${#authentication != null and #authentication.principal != 'anonymousUser' ? #strings.substring(#authentication.name,0,1).toUpperCase() : '?'}">C</div>
+                <span th:text="${#authentication != null ? #strings.abbreviate(#authentication.name,22) : ''}">mail</span>
+                <span class="nav-role-badge role-customer">Müşteri</span>
+            </button>
+            <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="user-dropdown" style="display:none;">
+                <div class="dropdown-header">
+                    <span class="nav-role-badge role-customer">Müşteri</span>
+                    <div class="dropdown-email" th:text="${#authentication != null ? #authentication.name : ''}"></div>
+                </div>
+                <a href="/booking" class="dropdown-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Randevu Al</a>
+                <a href="/request" class="dropdown-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Hizmet Talebi</a>
+                <div class="dropdown-divider"></div>
+                <a href="/provider/onboarding" class="dropdown-item accent">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    İşletmemi Kur
+                </a>
+                <div class="dropdown-divider"></div>
+                <form th:action="@{/logout}" method="POST">
+                    <button type="submit" class="dropdown-item danger"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg> Çıkış Yap</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- EMPLOYEE -->
+        <div sec:authorize="hasRole('EMPLOYEE')" x-data="{ open: false }" class="relative">
+            <button @click="open = !open" class="nav-user-btn">
+                <div class="nav-avatar" th:text="${#authentication != null and #authentication.principal != 'anonymousUser' ? #strings.substring(#authentication.name,0,1).toUpperCase() : '?'}">E</div>
+                <span th:text="${#authentication != null ? #strings.abbreviate(#authentication.name,22) : ''}">mail</span>
+                <span class="nav-role-badge role-employee">Çalışan</span>
+            </button>
+            <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="user-dropdown" style="display:none;">
+                <div class="dropdown-header">
+                    <span class="nav-role-badge role-employee">Çalışan</span>
+                    <div class="dropdown-email" th:text="${#authentication != null ? #authentication.name : ''}"></div>
+                </div>
+                <a href="/employee/dashboard" class="dropdown-item"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Günlük Planım</a>
+                <div class="dropdown-divider"></div>
+                <form th:action="@{/logout}" method="POST">
+                    <button type="submit" class="dropdown-item danger"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg> Çıkış Yap</button>
+                </form>
+            </div>
+        </div>
+
     </div>
 </header>
 
 <main style="min-height: calc(100vh - 60px);">
     <div layout:fragment="content"></div>
 </main>
-
 </body>
 </html>
